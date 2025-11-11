@@ -446,6 +446,7 @@
         <div class="tabs">
             <button class="tab-button active" onclick="showTab('overall')">Overall Standings</button>
             <button class="tab-button" onclick="showTab('round')">Round Results</button>
+            <button class="tab-button" onclick="showTab('setup')">Round Setup</button>
             <button class="tab-button" onclick="showTab('submit')">Submit Time</button>
             <button class="tab-button" onclick="showTab('rules')">Rules & Scoring</button>
         </div>
@@ -499,6 +500,84 @@
                 Loading round data...
             </div>
             <div id="round-content" style="display: none;">
+            </div>
+        </div>
+
+        <!-- Round Setup Tab -->
+        <div id="setup" class="tab-content">
+            <h2>🏁 Round Setup</h2>
+            <p style="margin-bottom: 20px;">Configure tracks and cars for upcoming rounds. All drivers can add or modify round configurations.</p>
+            
+            <div class="instructions">
+                <h3>📝 How to Set Up a Round:</h3>
+                <ol>
+                    <li>Enter the round number you want to configure</li>
+                    <li>Select a track and layout combination from the dropdown</li>
+                    <li>Select the car for this round</li>
+                    <li>Specify the season (e.g., "Season 1" or a date)</li>
+                    <li>Click Submit to save the configuration</li>
+                </ol>
+            </div>
+
+            <div style="background: #fff; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
+                <form id="roundSetupForm" style="display: flex; flex-direction: column; gap: 20px;">
+                    <div>
+                        <label for="roundNumber" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Round Number:</label>
+                        <input type="number" id="roundNumber" name="roundNumber" required min="1" 
+                               style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                    </div>
+
+                    <div>
+                        <label for="trackLayout" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Track - Layout:</label>
+                        <select id="trackLayout" name="trackLayout" required 
+                                style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                            <option value="">Loading tracks...</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="carName" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Car:</label>
+                        <select id="carName" name="carName" required 
+                                style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                            <option value="">Loading cars...</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="season" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Season:</label>
+                        <input type="text" id="season" name="season" required placeholder="e.g., Season 1" 
+                               style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                    </div>
+
+                    <button type="submit" class="refresh-btn" style="width: 100%; padding: 15px; font-size: 1.1em; margin: 0;">
+                        ✅ Submit Round Setup
+                    </button>
+
+                    <div id="setupMessage" style="display: none; padding: 15px; border-radius: 5px; text-align: center; font-weight: bold;"></div>
+                </form>
+            </div>
+
+            <div style="margin-top: 40px;">
+                <h3>📋 Current Round Configurations</h3>
+                <button class="refresh-btn" onclick="loadRoundSetup()">🔄 Refresh Configurations</button>
+                
+                <div id="setup-loading" class="loading">
+                    Loading round configurations...
+                </div>
+                <div id="setup-content" style="display: none;">
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th>Round</th>
+                                <th>Track - Layout</th>
+                                <th>Car</th>
+                                <th>Season</th>
+                            </tr>
+                        </thead>
+                        <tbody id="setup-body">
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -589,6 +668,8 @@
                 loadLeaderboard();
             } else if (tabName === 'round') {
                 loadRoundData();
+            } else if (tabName === 'setup') {
+                loadRoundSetup();
             }
         }
 
@@ -872,7 +953,163 @@
         // Load initial data
         window.addEventListener('load', () => {
             loadLeaderboard();
+            loadTracksAndCars();
         });
+
+        // Load tracks and cars for the Round Setup form
+        async function loadTracksAndCars() {
+            const tracksUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=1346258272&single=true&output=csv';
+            const carsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=208034687&single=true&output=csv';
+            
+            try {
+                // Load tracks
+                const tracksResponse = await fetch(tracksUrl);
+                const tracksCSV = await tracksResponse.text();
+                const tracksRows = tracksCSV.split('\n').slice(1); // Skip header
+                
+                const trackSelect = document.getElementById('trackLayout');
+                trackSelect.innerHTML = '<option value="">-- Select Track & Layout --</option>';
+                
+                tracksRows.forEach(row => {
+                    if (row.trim()) {
+                        const cols = row.split(',');
+                        const trackCombo = cols[4]; // Column E (Track Combos)
+                        if (trackCombo && trackCombo.trim()) {
+                            const option = document.createElement('option');
+                            option.value = trackCombo.trim();
+                            option.textContent = trackCombo.trim();
+                            trackSelect.appendChild(option);
+                        }
+                    }
+                });
+                
+                // Load cars
+                const carsResponse = await fetch(carsUrl);
+                const carsCSV = await carsResponse.text();
+                const carsRows = carsCSV.split('\n').slice(1); // Skip header
+                
+                const carSelect = document.getElementById('carName');
+                carSelect.innerHTML = '<option value="">-- Select Car --</option>';
+                
+                carsRows.forEach(row => {
+                    if (row.trim()) {
+                        const cols = row.split(',');
+                        const carName = cols[0]; // Column A (Car Name)
+                        if (carName && carName.trim()) {
+                            const option = document.createElement('option');
+                            option.value = carName.trim();
+                            option.textContent = carName.trim();
+                            carSelect.appendChild(option);
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading tracks and cars:', error);
+            }
+        }
+
+        // Handle Round Setup form submission
+        document.getElementById('roundSetupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('entry.1125205573', document.getElementById('roundNumber').value);
+            formData.append('entry.1175251604', document.getElementById('trackLayout').value);
+            formData.append('entry.1987106463', document.getElementById('carName').value);
+            formData.append('entry.1264862378', document.getElementById('season').value);
+            
+            const messageDiv = document.getElementById('setupMessage');
+            
+            try {
+                await fetch('https://docs.google.com/forms/d/e/1FAIpQLSdP88O7I3j91DmY7ef1nqpZqoQFSfxjfV8my32nG-cfuxSCeA/formResponse', {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'no-cors'
+                });
+                
+                messageDiv.style.display = 'block';
+                messageDiv.style.background = '#d4edda';
+                messageDiv.style.color = '#155724';
+                messageDiv.textContent = '✅ Round setup submitted successfully!';
+                
+                // Clear form
+                document.getElementById('roundSetupForm').reset();
+                
+                // Hide message after 3 seconds
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 3000);
+                
+                // Refresh the configurations table
+                setTimeout(() => {
+                    loadRoundSetup();
+                }, 2000);
+            } catch (error) {
+                messageDiv.style.display = 'block';
+                messageDiv.style.background = '#f8d7da';
+                messageDiv.style.color = '#721c24';
+                messageDiv.textContent = '❌ Error submitting round setup. Please try again.';
+            }
+        });
+
+        // Load Round Setup configurations
+        async function loadRoundSetup() {
+            const timestamp = new Date().getTime();
+            const setupUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=734685847&single=true&output=csv&t=${timestamp}`;
+            
+            try {
+                const response = await fetch(setupUrl, {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                const csvText = await response.text();
+                
+                // Parse CSV - columns: Timestamp, Round Number, Track-Layout, Car Name, Season
+                const rows = csvText.split('\n').slice(1); // Skip header
+                const data = rows
+                    .filter(row => row.trim())
+                    .map(row => {
+                        const cols = row.split(',');
+                        return {
+                            round: cols[1],
+                            trackLayout: cols[2],
+                            car: cols[3],
+                            season: cols[4]
+                        };
+                    })
+                    .filter(row => row.round);
+                
+                displayRoundSetup(data);
+            } catch (error) {
+                console.error('Error loading round setup:', error);
+                document.getElementById('setup-loading').textContent = 'Error loading round configurations. Please try again.';
+            }
+        }
+
+        function displayRoundSetup(data) {
+            const tbody = document.getElementById('setup-body');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">No round configurations yet. Use the form above to add one!</td></tr>';
+            } else {
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${row.round}</strong></td>
+                        <td>${row.trackLayout}</td>
+                        <td>${row.car}</td>
+                        <td>${row.season}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+            
+            document.getElementById('setup-loading').style.display = 'none';
+            document.getElementById('setup-content').style.display = 'block';
+        }
     </script>
 </body>
 </html>
