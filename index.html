@@ -559,7 +559,7 @@
                 <h3 style="color: #e65100; margin-bottom: 15px;">⚡ Purple Sectors</h3>
                 <p style="line-height: 1.8;">
                     A <strong>Purple Sector</strong> is awarded when you set the fastest time in a specific sector (Sector 1, 2, or 3) 
-                    within a round, regardless of your overall position. You can earn up to 2 purple sectors per round (one for each sector).
+                    within a round, regardless of your overall position. You can earn up to 3 purple sectors per round (one for each sector).
                     <br><br>
                     <strong>Note:</strong> 1st place drivers don't receive bonus points for purple sectors, but they are still tracked!
                 </p>
@@ -594,11 +594,17 @@
 
         // Load leaderboard data from Google Sheets
         async function loadLeaderboard() {
-    // Replace this URL with your published Table1 CSV URL
-    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=0&single=true&output=csv';
+    // Add cache-busting parameter to force fresh data
+    const timestamp = new Date().getTime();
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=0&single=true&output=csv&t=${timestamp}`;
     
     try {
-        const response = await fetch(sheetUrl);
+        const response = await fetch(sheetUrl, {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
         const csvText = await response.text();
         
         // Parse CSV
@@ -630,16 +636,20 @@
         loadRoundsCount();
     } catch (error) {
         console.error('Error loading leaderboard:', error);
-        // Fallback to sample data
-        loadLeaderboard();
     }
 }
 
         async function loadRoundsCount() {
-            const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv';
+            const timestamp = new Date().getTime();
+            const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
             
             try {
-                const response = await fetch(sheetUrl);
+                const response = await fetch(sheetUrl, {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache'
+                    }
+                });
                 const csvText = await response.text();
                 const rows = csvText.split('\n').slice(1);
                 const allData = rows
@@ -684,10 +694,16 @@
         }
 
         async function loadRoundData() {
-    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv';
+    const timestamp = new Date().getTime();
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
     
     try {
-        const response = await fetch(sheetUrl);
+        const response = await fetch(sheetUrl, {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
         const csvText = await response.text();
         
         // Parse CSV
