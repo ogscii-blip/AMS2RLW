@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMS2 Racing League</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 3em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .tab-button.active {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .leaderboard-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 15px;
+            text-align: left;
+            font-size: 1.1em;
+        }
+
+        .leaderboard-table td {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            color: #000;
+        }
+
+        .leaderboard-table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .position-1 {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            font-weight: bold;
+        }
+
+        .position-2 {
+            background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+            font-weight: bold;
+        }
+
+        .position-3 {
+            background: linear-gradient(135deg, #cd7f32 0%, #e5a76a 100%);
+            font-weight: bold;
+        }
+
+        .medal {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        .form-container {
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .form-container iframe {
+            width: 100%;
+            height: 800px;
+            border: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card h3 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .stat-card p {
+            opacity: 0.9;
+            font-size: 1.1em;
+            color: #fff;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+        }
+
+        .refresh-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin: 5px 0;
+        }
+
+        .round-group {
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .round-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s ease;
+        }
+
+        .round-header:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #65398b 100%);
+        }
+
+        .round-header h3 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+
+        .round-summary {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .round-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .round-details.expanded {
+            max-height: 1000px;
+        }
+
+        .round-details table {
+            width: 100%;
+            background: #fff;
+        }
+
+        .toggle-icon {
+            font-size: 1.2em;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-icon.expanded {
+            transform: rotate(180deg);
+        }
+
+        /* Mobile devices (320px - 480px) */
+        @media screen and (max-width: 480px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            header p {
+                font-size: 0.9em;
+            }
+
+            .tab-content {
+                padding: 15px;
+            }
+
+            .tab-button {
+                min-width: 100%;
+                padding: 12px 15px;
+                font-size: 0.95em;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .stat-card h3 {
+                font-size: 2em;
+            }
+
+            .leaderboard-table {
+                font-size: 0.85em;
+            }
+
+            .leaderboard-table th,
+            .leaderboard-table td {
+                padding: 8px 4px;
+            }
+
+            .round-header {
+                padding: 12px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .round-summary {
+                font-size: 0.8em;
+                word-break: break-word;
+            }
+
+            .container {
+                padding: 10px;
+            }
+
+            header {
+                padding: 20px 10px;
+                margin-bottom: 15px;
+            }
+
+            .form-container iframe {
+                height: 600px;
+            }
+        }
+
+        /* Small tablets (481px - 768px) */
+        @media screen and (min-width: 481px) and (max-width: 768px) {
+            header h1 {
+                font-size: 2.2em;
+            }
+
+            header p {
+                font-size: 1em;
+            }
+
+            .tab-button {
+                min-width: 140px;
+                padding: 12px 20px;
+                font-size: 1em;
+            }
+
+            .tab-content {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .stat-card h3 {
+                font-size: 2.2em;
+            }
+
+            .leaderboard-table {
+                font-size: 0.9em;
+            }
+
+            .leaderboard-table th,
+            .leaderboard-table td {
+                padding: 10px 8px;
+            }
+
+            .round-header {
+                padding: 12px;
+            }
+
+            .round-summary {
+                font-size: 0.85em;
+            }
+        }
+
+        /* Large tablets and small laptops (769px - 1024px) */
+        @media screen and (min-width: 769px) and (max-width: 1024px) {
+            header h1 {
+                font-size: 2.5em;
+            }
+
+            .tab-button {
+                font-size: 1em;
+                padding: 12px 25px;
+            }
+
+            .leaderboard-table {
+                font-size: 0.95em;
+            }
+        }
+
+        /* Make tables horizontally scrollable on small screens */
+        @media screen and (max-width: 768px) {
+            .leaderboard-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .leaderboard-table thead,
+            .leaderboard-table tbody,
+            .leaderboard-table tr {
+                display: table;
+                width: 100%;
+                table-layout: fixed;
+            }
+
+            .leaderboard-table td,
+            .leaderboard-table th {
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏁 AMS2 Racing League 🏁</h1>
+            <p>Compete for glory on the virtual track</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('overall')">Overall Standings</button>
+            <button class="tab-button" onclick="showTab('round')">Round Results</button>
+            <button class="tab-button" onclick="showTab('submit')">Submit Time</button>
+            <button class="tab-button" onclick="showTab('rules')">Rules & Scoring</button>
+        </div>
+
+        <!-- Overall Standings Tab -->
+        <div id="overall" class="tab-content active">
+            <h2>🏆 Championship Standings</h2>
+            <button class="refresh-btn" onclick="loadLeaderboard()">🔄 Refresh Data</button>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="totalRounds">-</h3>
+                    <p>Rounds Completed</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalDrivers">3</h3>
+                    <p>Active Drivers</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalPoints">-</h3>
+                    <p>Total Points Scored</p>
+                </div>
+            </div>
+
+            <div id="leaderboard-loading" class="loading">
+                Loading leaderboard data...
+            </div>
+            <div id="leaderboard-content" style="display: none;">
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Position</th>
+                            <th>Driver</th>
+                            <th>Total Points</th>
+                            <th>Purple Sectors</th>
+                            <th>Wins</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Round Results Tab -->
+        <div id="round" class="tab-content">
+            <h2>📊 Round-by-Round Results</h2>
+            <button class="refresh-btn" onclick="loadRoundData()">🔄 Refresh Data</button>
+            
+            <div id="round-loading" class="loading">
+                Loading round data...
+            </div>
+            <div id="round-content" style="display: none;">
+            </div>
+        </div>
+
+        <!-- Submit Time Tab -->
+        <div id="submit" class="tab-content">
+            <h2>⏱️ Submit Your Lap Time</h2>
+            <div class="instructions">
+                <h3>📝 Instructions:</h3>
+                <ol>
+                    <li>You must be signed in with your registered Google account</li>
+                    <li>Select the round number you're submitting for</li>
+                    <li>Enter your sector times in format: <strong>mm:ss,milliseconds</strong> (e.g., 00:12,231)</li>
+                    <li>You can submit multiple times per round - only your fastest lap counts!</li>
+                    <li>Your driver name will be filled automatically based on your email</li>
+                </ol>
+            </div>
+            <div class="form-container">
+                <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfS_nBrKCam6HI5Gc4q6lKMwtRhCm9Q9GF9H6y9yiPH4mJGFA/viewform?embedded=true" frameborder="0">
+                    Loading form...
+                </iframe>
+            </div>
+        </div>
+
+        <!-- Rules Tab -->
+        <div id="rules" class="tab-content">
+            <h2>📜 Rules & Scoring System</h2>
+            
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; margin-bottom: 20px; color: #1565c0;">
+                <h3 style="color: #1565c0; margin-bottom: 15px;">🏁 How It Works</h3>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li>Complete your lap and record your sector times</li>
+                    <li>Submit your times through the form</li>
+                    <li>You can submit multiple attempts per round</li>
+                    <li><strong>Only your fastest lap per round counts for points</strong></li>
+                    <li>Purple sectors are awarded for the fastest time in each individual sector</li>
+                </ul>
+            </div>
+
+            <div style="background: #f3e5f5; padding: 20px; border-radius: 10px; margin-bottom: 20px; color: #6a1b9a;">
+                <h3 style="color: #6a1b9a; margin-bottom: 15px;">🎯 Points System</h3>
+                <table style="width: 100%; margin-top: 10px;">
+                    <tr>
+                        <td style="padding: 10px; font-weight: bold; color: #6a1b9a;">🥇 1st Place:</td>
+                        <td style="padding: 10px; color: #6a1b9a;">10 points (no purple sector bonus)</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; font-weight: bold; color: #6a1b9a;">🥈 2nd Place:</td>
+                        <td style="padding: 10px; color: #6a1b9a;">6 points + 1 point per purple sector (max 2)</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; font-weight: bold; color: #6a1b9a;">🥉 3rd Place:</td>
+                        <td style="padding: 10px; color: #6a1b9a;">4 points + 2 points per purple sector (max 2)</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div style="background: #fff3e0; padding: 20px; border-radius: 10px; color: #e65100;">
+                <h3 style="color: #e65100; margin-bottom: 15px;">⚡ Purple Sectors</h3>
+                <p style="line-height: 1.8;">
+                    A <strong>Purple Sector</strong> is awarded when you set the fastest time in a specific sector (Sector 1, 2, or 3) 
+                    within a round, regardless of your overall position. You can earn up to 3 purple sectors per round (one for each sector).
+                    <br><br>
+                    <strong>Note:</strong> 1st place drivers don't receive bonus points for purple sectors, but they are still tracked!
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        function showTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            
+            // Load data if needed
+            if (tabName === 'overall') {
+                loadLeaderboard();
+            } else if (tabName === 'round') {
+                loadRoundData();
+            }
+        }
+
+        // Load leaderboard data from Google Sheets
+        async function loadLeaderboard() {
+    // Replace this URL with your published Table1 CSV URL
+    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=0&single=true&output=csv';
+    
+    try {
+        const response = await fetch(sheetUrl);
+        const csvText = await response.text();
+        
+        // Parse CSV
+        const rows = csvText.split('\n').slice(1); // Skip header
+        const data = rows
+            .filter(row => row.trim())
+            .map((row, index) => {
+                const cols = row.split(',');
+                return {
+                    position: index + 1,
+                    driver: cols[0],
+                    points: parseInt(cols[1]) || 0,
+                    purpleSectors: parseInt(cols[2]) || 0,
+                    wins: parseInt(cols[3]) || 0
+                };
+            })
+            .filter(row => row.driver); // Remove empty rows
+        
+        displayLeaderboard(data);
+        
+        // Update stats
+        document.getElementById('totalDrivers').textContent = data.length;
+        
+        // Calculate total points
+        const totalPoints = data.reduce((sum, driver) => sum + driver.points, 0);
+        document.getElementById('totalPoints').textContent = totalPoints;
+        
+        // Load round data to get rounds count
+        loadRoundsCount();
+    } catch (error) {
+        console.error('Error loading leaderboard:', error);
+        // Fallback to sample data
+        loadLeaderboard();
+    }
+}
+
+        async function loadRoundsCount() {
+            const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv';
+            
+            try {
+                const response = await fetch(sheetUrl);
+                const csvText = await response.text();
+                const rows = csvText.split('\n').slice(1);
+                const allData = rows
+                    .filter(row => row.trim())
+                    .map(row => {
+                        const cols = row.split(',');
+                        return { round: cols[0], driver: cols[1], position: cols[6] };
+                    })
+                    .filter(row => row.driver && row.position);
+                
+                const rounds = [...new Set(allData.map(r => r.round))];
+                document.getElementById('totalRounds').textContent = rounds.length;
+            } catch (error) {
+                console.error('Error loading rounds count:', error);
+            }
+        }
+
+        function displayLeaderboard(data) {
+            const tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = '';
+            
+            data.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                if (index === 0) tr.classList.add('position-1');
+                if (index === 1) tr.classList.add('position-2');
+                if (index === 2) tr.classList.add('position-3');
+                
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+                
+                tr.innerHTML = `
+                    <td><span class="medal">${medal}</span>${row.position}</td>
+                    <td><strong>${row.driver}</strong></td>
+                    <td><strong>${row.points}</strong></td>
+                    <td>${row.purpleSectors}</td>
+                    <td>${row.wins}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            document.getElementById('leaderboard-loading').style.display = 'none';
+            document.getElementById('leaderboard-content').style.display = 'block';
+        }
+
+        async function loadRoundData() {
+    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv';
+    
+    try {
+        const response = await fetch(sheetUrl);
+        const csvText = await response.text();
+        
+        // Parse CSV
+        const rows = csvText.split('\n').slice(1); // Skip header
+        const allData = rows
+            .filter(row => row.trim())
+            .map((row, index) => {
+                const cols = row.split(',');
+                return {
+                    round: cols[0],
+                    driver: cols[1],
+                    sector1: cols[2],
+                    sector2: cols[3],
+                    sector3: cols[4],
+                    totalTime: cols[5],
+                    position: parseInt(cols[6]) || 0,
+                    purpleSectors: parseInt(cols[7]) || 0,
+                    points: parseInt(cols[8]) || 0,
+                    timestamp: index // Original row order as tie-breaker
+                };
+            })
+            .filter(row => row.driver && row.position); // Only show best laps
+        
+        // Group by round and sort within each round
+        const roundGroups = {};
+        allData.forEach(row => {
+            if (!roundGroups[row.round]) {
+                roundGroups[row.round] = [];
+            }
+            roundGroups[row.round].push(row);
+        });
+        
+        // Sort each round by: points (desc), purple sectors (desc), timestamp (asc)
+        Object.keys(roundGroups).forEach(round => {
+            roundGroups[round].sort((a, b) => {
+                if (b.points !== a.points) return b.points - a.points;
+                if (b.purpleSectors !== a.purpleSectors) return b.purpleSectors - a.purpleSectors;
+                return a.timestamp - b.timestamp;
+            });
+        });
+        
+        displayRoundData(roundGroups);
+        
+        // Update stats
+        const rounds = Object.keys(roundGroups);
+        const totalPoints = allData.reduce((sum, row) => sum + row.points, 0);
+        document.getElementById('totalRounds').textContent = rounds.length;
+        document.getElementById('totalPoints').textContent = totalPoints;
+    } catch (error) {
+        console.error('Error loading round data:', error);
+    }
+}
+
+        function displayRoundData(roundGroups) {
+            const container = document.getElementById('round-content');
+            container.innerHTML = '';
+            
+            // Sort rounds numerically
+            const sortedRounds = Object.keys(roundGroups).sort((a, b) => {
+                const numA = parseInt(a.replace(/\D/g, '')) || 0;
+                const numB = parseInt(b.replace(/\D/g, '')) || 0;
+                return numA - numB;
+            });
+            
+            sortedRounds.forEach(round => {
+                const results = roundGroups[round];
+                
+                // Create summary text
+                const summary = results.map(r => 
+                    `${r.driver} - P${r.position} - ${r.points}pts`
+                ).join(' | ');
+                
+                // Create round group
+                const roundDiv = document.createElement('div');
+                roundDiv.className = 'round-group';
+                
+                // Create header
+                const header = document.createElement('div');
+                header.className = 'round-header';
+                header.onclick = () => toggleRound(round);
+                header.innerHTML = `
+                    <div>
+                        <h3>Round ${round}</h3>
+                        <div class="round-summary">${summary}</div>
+                    </div>
+                    <span class="toggle-icon" id="toggle-${round}">▼</span>
+                `;
+                
+                // Create details section
+                const details = document.createElement('div');
+                details.className = 'round-details';
+                details.id = `details-${round}`;
+                
+                const table = document.createElement('table');
+                table.className = 'leaderboard-table';
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Driver</th>
+                            <th>Sector 1</th>
+                            <th>Sector 2</th>
+                            <th>Sector 3</th>
+                            <th>Total Time</th>
+                            <th>Position</th>
+                            <th>Purple Sectors</th>
+                            <th>Points</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                `;
+                
+                const tbody = table.querySelector('tbody');
+                results.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    if (row.position === 1) tr.classList.add('position-1');
+                    if (row.position === 2) tr.classList.add('position-2');
+                    if (row.position === 3) tr.classList.add('position-3');
+                    
+                    tr.innerHTML = `
+                        <td><strong>${row.driver}</strong></td>
+                        <td>${row.sector1}</td>
+                        <td>${row.sector2}</td>
+                        <td>${row.sector3}</td>
+                        <td><strong>${row.totalTime}</strong></td>
+                        <td>${row.position}</td>
+                        <td>${row.purpleSectors}</td>
+                        <td><strong>${row.points}</strong></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+                details.appendChild(table);
+                roundDiv.appendChild(header);
+                roundDiv.appendChild(details);
+                container.appendChild(roundDiv);
+            });
+            
+            document.getElementById('round-loading').style.display = 'none';
+            document.getElementById('round-content').style.display = 'block';
+        }
+        
+        function toggleRound(round) {
+            const details = document.getElementById(`details-${round}`);
+            const icon = document.getElementById(`toggle-${round}`);
+            
+            details.classList.toggle('expanded');
+            icon.classList.toggle('expanded');
+        }
+
+        // Load initial data
+        window.addEventListener('load', () => {
+            loadLeaderboard();
+        });
+    </script>
+</body>
+</html>
