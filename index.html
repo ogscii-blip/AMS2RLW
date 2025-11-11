@@ -824,10 +824,10 @@
                     
                     tr.innerHTML = `
                         <td><strong>${row.driver}</strong></td>
-                        <td>${row.sector1}</td>
-                        <td>${row.sector2}</td>
-                        <td>${row.sector3}</td>
-                        <td><strong>${row.totalTime}</strong></td>
+                        <td>${formatTime(row.sector1)}</td>
+                        <td>${formatTime(row.sector2)}</td>
+                        <td>${formatTime(row.sector3)}</td>
+                        <td><strong>${formatTime(row.totalTime)}</strong></td>
                         <td>${row.position}</td>
                         <td>${row.purpleSectors}</td>
                         <td><strong>${row.points}</strong></td>
@@ -851,6 +851,22 @@
             
             details.classList.toggle('expanded');
             icon.classList.toggle('expanded');
+        }
+
+        // Format seconds to mm:ss,milliseconds
+        function formatTime(seconds) {
+            if (!seconds || seconds === "") return "";
+            
+            const totalSeconds = parseFloat(seconds);
+            const minutes = Math.floor(totalSeconds / 60);
+            const secs = Math.floor(totalSeconds % 60);
+            const milliseconds = Math.round((totalSeconds % 1) * 1000);
+            
+            const mm = String(minutes).padStart(2, '0');
+            const ss = String(secs).padStart(2, '0');
+            const ms = String(milliseconds).padStart(3, '0');
+            
+            return `${mm}:${ss},${ms}`;
         }
 
         // Load initial data
