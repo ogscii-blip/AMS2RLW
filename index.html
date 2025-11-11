@@ -1293,11 +1293,12 @@
                 
                 // Parse setup data
                 const setupRows = setupCSV.split('\n').slice(1);
-                const setupData = setupRows
+                const allSetupData = setupRows
                     .filter(row => row.trim())
                     .map(row => {
                         const cols = row.split(',');
                         return {
+                            timestamp: new Date(cols[0]),
                             round: cols[1],
                             trackLayout: cols[2],
                             car: cols[3],
@@ -1305,6 +1306,16 @@
                         };
                     })
                     .filter(row => row.round);
+                
+                // Keep only the latest configuration for each unique round number (by timestamp)
+                const uniqueRounds = {};
+                allSetupData.forEach(setup => {
+                    if (!uniqueRounds[setup.round] || setup.timestamp > uniqueRounds[setup.round].timestamp) {
+                        uniqueRounds[setup.round] = setup;
+                    }
+                });
+                
+                const setupData = Object.values(uniqueRounds);
                 
                 // Parse round data (lap times)
                 const roundDataRows = roundDataCSV.split('\n').slice(1);
