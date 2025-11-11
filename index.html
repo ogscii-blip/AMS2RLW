@@ -547,7 +547,6 @@
             display: flex;
             gap: 15px;
             align-items: center;
-            margin-bottom: 10px;
         }
 
         .round-banner-icon {
@@ -1005,6 +1004,10 @@
             const container = document.getElementById('round-content');
             container.innerHTML = '';
             
+            // Fallback images
+            const fallbackTrackImage = 'https://static.vecteezy.com/system/resources/previews/015/114/628/non_2x/race-track-icon-isometric-road-circuit-vector.jpg';
+            const fallbackCarImage = 'https://thumb.silhouette-ac.com/t/e9/e9f1eb16ae292f36be10def00d95ecbb_t.jpeg';
+            
             // Sort rounds numerically
             const sortedRounds = Object.keys(roundGroups).sort((a, b) => {
                 const numA = parseInt(a.replace(/\D/g, '')) || 0;
@@ -1018,8 +1021,8 @@
                 // Get track and car info from first result
                 const trackLayout = results[0].trackLayout || '';
                 const car = results[0].car || '';
-                const trackImage = tracksMap[trackLayout] || 'https://via.placeholder.com/60x60?text=Track';
-                const carImage = carsMap[car] || 'https://via.placeholder.com/60x60?text=Car';
+                const trackImage = tracksMap[trackLayout] || fallbackTrackImage;
+                const carImage = carsMap[car] || fallbackCarImage;
                 
                 // Create summary text
                 const summary = results.map(r => 
@@ -1030,24 +1033,24 @@
                 const roundDiv = document.createElement('div');
                 roundDiv.className = 'round-group';
                 
-                // Create header with icons
+                // Create header with icons on the right
                 const header = document.createElement('div');
                 header.className = 'round-header';
                 header.onclick = () => toggleRound(round);
                 header.innerHTML = `
                     <div style="flex: 1;">
-                        <div class="round-banner-icons">
-                            <div class="round-banner-icon">
-                                <img src="${trackImage}" alt="${trackLayout}">
-                                <p>${trackLayout}</p>
-                            </div>
-                            <div class="round-banner-icon">
-                                <img src="${carImage}" alt="${car}">
-                                <p>${car}</p>
-                            </div>
-                        </div>
                         <h3>Round ${round}</h3>
                         <div class="round-summary">${summary}</div>
+                    </div>
+                    <div class="round-banner-icons">
+                        <div class="round-banner-icon">
+                            <img src="${trackImage}" alt="${trackLayout}" onerror="this.src='${fallbackTrackImage}'">
+                            <p>${trackLayout}</p>
+                        </div>
+                        <div class="round-banner-icon">
+                            <img src="${carImage}" alt="${car}" onerror="this.src='${fallbackCarImage}'">
+                            <p>${car}</p>
+                        </div>
                     </div>
                     <span class="toggle-icon" id="toggle-${round}">▼</span>
                 `;
@@ -1328,6 +1331,10 @@
             const container = document.getElementById('round-cards-grid');
             container.innerHTML = '';
             
+            // Fallback images
+            const fallbackTrackImage = 'https://static.vecteezy.com/system/resources/previews/015/114/628/non_2x/race-track-icon-isometric-road-circuit-vector.jpg';
+            const fallbackCarImage = 'https://thumb.silhouette-ac.com/t/e9/e9f1eb16ae292f36be10def00d95ecbb_t.jpeg';
+            
             if (setupData.length === 0) {
                 container.innerHTML = '<p style="text-align: center; padding: 40px; color: #666;">No rounds configured yet. Use the form below to add your first round!</p>';
             } else {
@@ -1365,8 +1372,8 @@
                     const card = document.createElement('div');
                     card.className = 'round-card';
                     
-                    const trackImage = tracksMap[setup.trackLayout] || 'https://via.placeholder.com/150x100?text=No+Image';
-                    const carImage = carsMap[setup.car] || 'https://via.placeholder.com/150x100?text=No+Image';
+                    const trackImage = tracksMap[setup.trackLayout] || fallbackTrackImage;
+                    const carImage = carsMap[setup.car] || fallbackCarImage;
                     
                     card.innerHTML = `
                         <div class="round-card-header">
@@ -1376,11 +1383,11 @@
                         
                         <div class="round-card-images">
                             <div class="round-card-image-container">
-                                <img src="${trackImage}" alt="${setup.trackLayout}">
+                                <img src="${trackImage}" alt="${setup.trackLayout}" onerror="this.src='${fallbackTrackImage}'">
                                 <p>${setup.trackLayout}</p>
                             </div>
                             <div class="round-card-image-container">
-                                <img src="${carImage}" alt="${setup.car}">
+                                <img src="${carImage}" alt="${setup.car}" onerror="this.src='${fallbackCarImage}'">
                                 <p>${setup.car}</p>
                             </div>
                         </div>
