@@ -314,88 +314,112 @@
             }
 
             /* Better mobile table cards with compact layout */
-.leaderboard-table thead {
-    display: none !important;
-}
+            .leaderboard-table thead {
+                display: none !important;
+            }
 
-.leaderboard-table,
-.leaderboard-table tbody,
-.leaderboard-table tr {
-    display: block;
-    width: 100%;
-}
+            .leaderboard-table,
+            .leaderboard-table tbody,
+            .leaderboard-table tr {
+                display: block;
+                width: 100%;
+            }
 
-.leaderboard-table tr {
-    margin-bottom: 12px;
-    border: 3px solid #e0e0e0;
-    border-radius: 10px;
-    padding: 0;
-    background: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    position: relative;
-}
+            .leaderboard-table tr {
+                margin-bottom: 12px;
+                border: 3px solid #e0e0e0;
+                border-radius: 10px;
+                padding: 0;
+                background: white;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                position: relative;
+            }
 
-/* Gold border for 1st place */
-.leaderboard-table tr.position-1 {
-    border-color: #ffd700;
-}
+            /* Gold border for 1st place - ONLY in Overall Standings */
+            #overall .leaderboard-table tr.position-1 {
+                border-color: #ffd700;
+            }
 
-/* Silver border for 2nd place */
-.leaderboard-table tr.position-2 {
-    border-color: #c0c0c0;
-}
+            /* Silver border for 2nd place - ONLY in Overall Standings */
+            #overall .leaderboard-table tr.position-2 {
+                border-color: #c0c0c0;
+            }
 
-/* Bronze border for 3rd place */
-.leaderboard-table tr.position-3 {
-    border-color: #cd7f32;
-}
+            /* Bronze border for 3rd place - ONLY in Overall Standings */
+            #overall .leaderboard-table tr.position-3 {
+                border-color: #cd7f32;
+            }
 
-/* Medal container - centered at top */
-.leaderboard-table td:first-child {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 15px 0 10px 0;
-    border: none;
-    background: linear-gradient(to bottom, #f8f9fa 0%, white 100%);
-    border-radius: 7px 7px 0 0;
-}
+            /* First cell treatment varies by context */
+            /* Overall Standings: Medal container - centered at top */
+            #overall .leaderboard-table td:first-child {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 15px 0 10px 0;
+                border: none;
+                background: linear-gradient(to bottom, #f8f9fa 0%, white 100%);
+                border-radius: 7px 7px 0 0;
+            }
 
-.leaderboard-table td:first-child:before {
-    display: none;
-}
+            #overall .leaderboard-table td:first-child:before {
+                display: none;
+            }
 
-.leaderboard-table td:first-child .medal {
-    font-size: 2.5em;
-    margin: 0;
-}
+            #overall .leaderboard-table td:first-child .medal {
+                font-size: 2.5em;
+                margin: 0;
+            }
 
-/* All other cells */
-.leaderboard-table td:not(:first-child) {
-    display: grid;
-    grid-template-columns: 110px 1fr;
-    padding: 10px 20px;
-    border: none;
-    text-align: left;
-    gap: 15px;
-    align-items: center;
-}
+            /* Round Results: First cell (Driver name) - treat like other cells but special styling */
+            #round .leaderboard-table td:first-child {
+                display: grid;
+                grid-template-columns: 110px 1fr;
+                padding: 15px 20px 10px 20px;
+                border: none;
+                text-align: left;
+                gap: 15px;
+                align-items: center;
+                background: linear-gradient(to bottom, #f8f9fa 0%, white 100%);
+                border-radius: 7px 7px 0 0;
+                font-weight: bold;
+            }
 
-.leaderboard-table td:not(:first-child):before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: #667eea;
-    text-align: left;
-    font-size: 0.9em;
-}
+            #round .leaderboard-table td:first-child:before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #667eea;
+                text-align: left;
+                font-size: 0.9em;
+            }
 
-.leaderboard-table td:not(:last-child):not(:first-child) {
-    border-bottom: 1px solid #f0f0f0;
-}
+            /* All other cells (not first) */
+            .leaderboard-table td:not(:first-child) {
+                display: grid;
+                grid-template-columns: 110px 1fr;
+                padding: 10px 20px;
+                border: none;
+                text-align: left;
+                gap: 15px;
+                align-items: center;
+            }
 
-/* ===================================================================
-   END OF MOBILE STANDINGS CARDS CSS
-   =================================================================== */
+            .leaderboard-table td:not(:first-child):before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #667eea;
+                text-align: left;
+                font-size: 0.9em;
+            }
+
+            .leaderboard-table td:not(:last-child):not(:first-child) {
+                border-bottom: 1px solid #f0f0f0;
+            }
+
+            /* Last cell in Round Results - no bottom border */
+            #round .leaderboard-table td:last-child {
+                border-bottom: none;
+            }
 
             /* Driver cards mobile */
             .driver-card {
