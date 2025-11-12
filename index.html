@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AMS2 Racing League</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         * {
             margin: 0;
@@ -574,6 +575,13 @@
         <header>
             <h1>🏁 AMS2 Racing League 🏁</h1>
             <p>Compete for glory on the virtual track</p>
+            <div id="authSection" style="margin-top: 20px;">
+                <div id="signInButton"></div>
+                <div id="userInfo" style="display: none;">
+                    <p style="margin: 5px 0;">Signed in as: <strong id="userName"></strong></p>
+                    <button onclick="signOut()" style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-top: 5px;">Sign Out</button>
+                </div>
+            </div>
         </header>
 
         <div class="tabs">
@@ -707,52 +715,59 @@
         <!-- Submit Time Tab -->
         <div id="submit" class="tab-content">
             <h2>⏱️ Submit Your Lap Time</h2>
-            <div class="instructions">
-                <h3>📝 Instructions:</h3>
-                <ol>
-                    <li>You must be signed in with your registered Google account</li>
-                    <li>Select the round number you're submitting for</li>
-                    <li>Enter your sector times - just type the numbers (e.g., type "12345" and it becomes "00:12,345")</li>
-                    <li>You can submit multiple times per round - only your fastest lap counts!</li>
-                    <li>Your driver name will be filled automatically based on your email</li>
-                </ol>
+            
+            <div id="authWarning" style="display: none; background: #fff3cd; border: 1px solid #ffc107; padding: 20px; border-radius: 10px; margin-bottom: 20px; color: #856404; text-align: center;">
+                <h3>🔒 Authentication Required</h3>
+                <p style="margin: 10px 0;">Please sign in at the top of the page with your registered email to submit lap times.</p>
             </div>
             
-            <div style="background: #fff; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
-                <form id="lapTimeForm" style="display: flex; flex-direction: column; gap: 20px;">
-                    <div>
-                        <label for="roundNumber2" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Round Number:</label>
-                        <input type="number" id="roundNumber2" name="roundNumber" required min="1" 
-                               style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
-                    </div>
+            <div id="lapTimeFormContainer" style="display: none;">
+                <div class="instructions">
+                    <h3>📝 Instructions:</h3>
+                    <ol>
+                        <li>Select the round number you're submitting for</li>
+                        <li>Enter your sector times - just type the numbers (e.g., type "12345" and it becomes "00:12,345")</li>
+                        <li>You can submit multiple times per round - only your fastest lap counts!</li>
+                        <li>Your driver name will be filled automatically based on your email</li>
+                    </ol>
+                </div>
+                
+                <div style="background: #fff; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
+                    <form id="lapTimeForm" style="display: flex; flex-direction: column; gap: 20px;">
+                        <div>
+                            <label for="roundNumber2" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Round Number:</label>
+                            <input type="number" id="roundNumber2" name="roundNumber" required min="1" 
+                                   style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                        </div>
 
-                    <div>
-                        <label for="sector1" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 1 Time:</label>
-                        <input type="text" id="sector1" name="sector1" required placeholder="00:00,000" maxlength="9"
-                               style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; font-family: monospace; letter-spacing: 1px;">
-                        <small style="color: #666;">Just type numbers: 12345 → 00:12,345</small>
-                    </div>
+                        <div>
+                            <label for="sector1" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 1 Time:</label>
+                            <input type="text" id="sector1" name="sector1" required placeholder="00:00,000" maxlength="9"
+                                   style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; font-family: monospace; letter-spacing: 1px;">
+                            <small style="color: #666;">Just type numbers: 12345 → 00:12,345</small>
+                        </div>
 
-                    <div>
-                        <label for="sector2" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 2 Time:</label>
-                        <input type="text" id="sector2" name="sector2" required placeholder="00:00,000" maxlength="9"
-                               style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; font-family: monospace; letter-spacing: 1px;">
-                        <small style="color: #666;">Just type numbers: 13234 → 00:13,234</small>
-                    </div>
+                        <div>
+                            <label for="sector2" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 2 Time:</label>
+                            <input type="text" id="sector2" name="sector2" required placeholder="00:00,000" maxlength="9"
+                                   style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; font-family: monospace; letter-spacing: 1px;">
+                            <small style="color: #666;">Just type numbers: 13234 → 00:13,234</small>
+                        </div>
 
-                    <div>
-                        <label for="sector3" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 3 Time:</label>
-                        <input type="text" id="sector3" name="sector3" required placeholder="00:00,000" maxlength="9"
-                               style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; font-family: monospace; letter-spacing: 1px;">
-                        <small style="color: #666;">Just type numbers: 14456 → 00:14,456</small>
-                    </div>
+                        <div>
+                            <label for="sector3" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 3 Time:</label>
+                            <input type="text" id="sector3" name="sector3" required placeholder="00:00,000" maxlength="9"
+                                   style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; font-family: monospace; letter-spacing: 1px;">
+                            <small style="color: #666;">Just type numbers: 14456 → 00:14,456</small>
+                        </div>
 
-                    <button type="submit" class="refresh-btn" style="width: 100%; padding: 15px; font-size: 1.1em; margin: 0;">
-                        ✅ Submit Lap Time
-                    </button>
+                        <button type="submit" class="refresh-btn" style="width: 100%; padding: 15px; font-size: 1.1em; margin: 0;">
+                            ✅ Submit Lap Time
+                        </button>
 
-                    <div id="lapTimeMessage" style="display: none; padding: 15px; border-radius: 5px; text-align: center; font-weight: bold;"></div>
-                </form>
+                        <div id="lapTimeMessage" style="display: none; padding: 15px; border-radius: 5px; text-align: center; font-weight: bold;"></div>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -1161,11 +1176,159 @@
             return `${mm}:${ss},${ms}`;
         }
 
+        // Google Sign-In Configuration
+        let ALLOWED_EMAILS = {};
+        let GOOGLE_CLIENT_ID = null;
+        
+        let currentUser = null;
+        let googleIdToken = null;
+
+        // Load configuration from Google Sheets
+        async function loadConfig() {
+            const configUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=1415755600&single=true&output=csv';
+            
+            try {
+                const response = await fetch(configUrl);
+                const csvText = await response.text();
+                const rows = csvText.split('\n').slice(1); // Skip header
+                
+                rows.forEach(row => {
+                    if (row.trim()) {
+                        const cols = row.split(',');
+                        const setting = cols[0];
+                        const value = cols[1];
+                        
+                        if (setting === 'google_client_id') {
+                            GOOGLE_CLIENT_ID = value;
+                        } else if (setting.startsWith('allowed_email_')) {
+                            const nameKey = setting.replace('allowed_email_', 'allowed_name_');
+                            const nameRow = rows.find(r => r.startsWith(nameKey));
+                            if (nameRow) {
+                                const nameCols = nameRow.split(',');
+                                ALLOWED_EMAILS[value] = nameCols[1];
+                            }
+                        }
+                    }
+                });
+                
+                // Initialize Google Sign-In after loading config
+                if (GOOGLE_CLIENT_ID) {
+                    initGoogleSignIn();
+                } else {
+                    console.error('Google Client ID not found in Config sheet');
+                    document.getElementById('signInButton').innerHTML = '<p style="color: red;">⚠️ Sign-in not configured. Please add google_client_id to Config sheet.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading config:', error);
+            }
+        }
+
+        // Initialize Google Sign-In
+        function initGoogleSignIn() {
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleCredentialResponse
+            });
+            
+            google.accounts.id.renderButton(
+                document.getElementById('signInButton'),
+                { 
+                    theme: 'filled_blue', 
+                    size: 'large',
+                    text: 'signin_with',
+                    shape: 'rectangular'
+                }
+            );
+        }
+
+        function handleCredentialResponse(response) {
+            // Decode JWT token to get user info
+            const userObject = parseJwt(response.credential);
+            const userEmail = userObject.email;
+            
+            // Check if email is in allowed list
+            if (ALLOWED_EMAILS[userEmail]) {
+                currentUser = {
+                    email: userEmail,
+                    name: ALLOWED_EMAILS[userEmail],
+                    fullName: userObject.name
+                };
+                googleIdToken = response.credential;
+                
+                // Update UI
+                document.getElementById('signInButton').style.display = 'none';
+                document.getElementById('userInfo').style.display = 'block';
+                document.getElementById('userName').textContent = `${currentUser.name} (${currentUser.email})`;
+                
+                // Show form if on submit tab
+                updateSubmitTabVisibility();
+                
+                // Store in sessionStorage
+                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                sessionStorage.setItem('googleIdToken', googleIdToken);
+            } else {
+                alert('⛔ Access Denied\n\nYour email (' + userEmail + ') is not authorized to access this league.\n\nOnly registered players can submit lap times.');
+                signOut();
+            }
+        }
+
+        function parseJwt(token) {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        function signOut() {
+            google.accounts.id.disableAutoSelect();
+            currentUser = null;
+            googleIdToken = null;
+            sessionStorage.removeItem('currentUser');
+            sessionStorage.removeItem('googleIdToken');
+            
+            document.getElementById('signInButton').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'none';
+            
+            updateSubmitTabVisibility();
+        }
+
+        function updateSubmitTabVisibility() {
+            if (currentUser) {
+                document.getElementById('authWarning').style.display = 'none';
+                document.getElementById('lapTimeFormContainer').style.display = 'block';
+            } else {
+                document.getElementById('authWarning').style.display = 'block';
+                document.getElementById('lapTimeFormContainer').style.display = 'none';
+            }
+        }
+
+        // Check for existing session on page load
+        function checkExistingSession() {
+            const storedUser = sessionStorage.getItem('currentUser');
+            const storedToken = sessionStorage.getItem('googleIdToken');
+            
+            if (storedUser && storedToken) {
+                currentUser = JSON.parse(storedUser);
+                googleIdToken = storedToken;
+                
+                document.getElementById('signInButton').style.display = 'none';
+                document.getElementById('userInfo').style.display = 'block';
+                document.getElementById('userName').textContent = `${currentUser.name} (${currentUser.email})`;
+                
+                updateSubmitTabVisibility();
+            }
+        }
+
         // Load initial data
         window.addEventListener('load', () => {
             loadLeaderboard();
             loadTracksAndCars();
             setupSectorTimeInputs();
+            loadConfig(); // Load config from sheets, which will init Google Sign-In
+            checkExistingSession();
+            updateSubmitTabVisibility();
         });
 
         // Setup sector time input masking
@@ -1249,6 +1412,16 @@
         document.getElementById('lapTimeForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            // Check if user is signed in
+            if (!currentUser) {
+                const messageDiv = document.getElementById('lapTimeMessage');
+                messageDiv.style.display = 'block';
+                messageDiv.style.background = '#f8d7da';
+                messageDiv.style.color = '#721c24';
+                messageDiv.textContent = '❌ Please sign in to submit lap times.';
+                return;
+            }
+            
             const roundNumber = document.getElementById('roundNumber2').value;
             const sector1 = document.getElementById('sector1').value;
             const sector2 = document.getElementById('sector2').value;
@@ -1309,7 +1482,7 @@
                 messageDiv.style.display = 'block';
                 messageDiv.style.background = '#d4edda';
                 messageDiv.style.color = '#155724';
-                messageDiv.textContent = '✅ Lap time submitted successfully!';
+                messageDiv.textContent = `✅ Lap time submitted successfully by ${currentUser.name}!`;
                 
                 // Clear form
                 document.getElementById('lapTimeForm').reset();
