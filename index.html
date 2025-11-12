@@ -313,7 +313,7 @@
                 font-size: 2em;
             }
 
-            /* Better mobile table cards with compact layout */
+            /* Mobile-friendly table - convert to cards */
             .leaderboard-table thead {
                 display: none;
             }
@@ -328,31 +328,24 @@
             .leaderboard-table tr {
                 margin-bottom: 15px;
                 border: 2px solid #e0e0e0;
-                border-radius: 10px;
-                padding: 15px;
+                border-radius: 8px;
+                padding: 12px;
                 background: white;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             }
 
             .leaderboard-table td {
-                display: grid;
-                grid-template-columns: 120px 1fr;
-                padding: 10px 0;
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
                 border: none;
                 text-align: left;
-                gap: 15px;
-                align-items: center;
             }
 
             .leaderboard-table td:before {
                 content: attr(data-label);
-                font-weight: 600;
+                font-weight: bold;
                 color: #667eea;
-                text-align: left;
-            }
-
-            .leaderboard-table td:not(:last-child) {
-                border-bottom: 1px solid #f0f0f0;
+                margin-right: 10px;
             }
 
             /* Driver cards mobile */
@@ -426,35 +419,20 @@
                 height: 600px;
             }
 
-            /* Keep original mobile profile layout (horizontal) */
+            /* User info mobile */
             #userInfo {
-                padding: 10px 12px !important;
-            }
-
-            #userPhotoContainer {
-                flex-shrink: 0;
+                padding: 12px 15px !important;
             }
 
             #userPhotoContainer img {
-                width: 45px !important;
-                height: 45px !important;
+                width: 50px !important;
+                height: 50px !important;
             }
 
             #userNumberBadge {
-                width: 22px !important;
-                height: 22px !important;
-                font-size: 0.7em !important;
-                bottom: -3px !important;
-                right: -3px !important;
-            }
-
-            #userName {
-                font-size: 0.95em !important;
-            }
-
-            #userInfo button {
-                font-size: 0.8em !important;
-                padding: 6px 12px !important;
+                width: 24px !important;
+                height: 24px !important;
+                font-size: 0.75em !important;
             }
         }
 
@@ -518,17 +496,6 @@
 
             .leaderboard-table {
                 font-size: 0.95em;
-            }
-        }
-
-        /* Desktop - horizontal profile buttons */
-        @media screen and (min-width: 481px) {
-            #userInfo > div > div:last-child > div {
-                flex-direction: row !important;
-            }
-            
-            #userInfo button {
-                width: auto !important;
             }
         }
 
@@ -858,11 +825,11 @@
                             <!-- Profile Photo with Number Badge -->
                             <div id="userPhotoContainer" style="position: relative; display: none;">
                                 <img id="userProfilePhoto" src="" alt="Profile" 
-                                     style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid white; object-fit: cover; display: block;">
+                                     style="width: 60px; height: 60px; border-radius: 50%; border: 3px solid white; object-fit: cover; display: block;">
                                 <div id="userNumberBadge" 
                                      style="position: absolute; bottom: -5px; right: -5px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                                            color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; 
-                                            justify-content: center; font-size: 0.95em; font-weight: bold; border: 2px solid white; 
+                                            color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; 
+                                            justify-content: center; font-size: 0.85em; font-weight: bold; border: 2px solid white; 
                                             box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                                 </div>
                             </div>
