@@ -572,17 +572,21 @@
 <body>
     <div class="container">
         <header>
-            <h1>🏁 AMS2 Racing League 🏁</h1>
-            <p>Compete for glory on the virtual track</p>
-            <div id="authSection" style="margin-top: 20px;">
-                <div id="loginForm" style="display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
-                    <input type="text" id="driverNameInput" placeholder="Driver Name" style="padding: 10px; border-radius: 5px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.9); font-size: 1em;">
-                    <input type="password" id="passwordInput" placeholder="Password" style="padding: 10px; border-radius: 5px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.9); font-size: 1em;">
-                    <button onclick="login()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 1em;">Sign In</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <div>
+                    <h1 style="margin: 0;">🏁 AMS2 Racing League 🏁</h1>
+                    <p style="margin: 5px 0 0 0;">Compete for glory on the virtual track</p>
                 </div>
-                <div id="userInfo" style="display: none;">
-                    <p style="margin: 5px 0;">Signed in as: <strong id="userName"></strong></p>
-                    <button onclick="signOut()" style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-top: 5px;">Sign Out</button>
+                <div id="authSection">
+                    <div id="loginForm" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <input type="text" id="driverNameInput" placeholder="Driver Name" style="padding: 8px; border-radius: 5px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.9); font-size: 0.9em;">
+                        <input type="password" id="passwordInput" placeholder="Password" style="padding: 8px; border-radius: 5px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.9); font-size: 0.9em;">
+                        <button onclick="login()" style="background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-size: 0.9em; white-space: nowrap;">Sign In</button>
+                    </div>
+                    <div id="userInfo" style="display: none; text-align: right;">
+                        <p style="margin: 0 0 5px 0; font-size: 0.9em;">👤 <strong id="userName"></strong></p>
+                        <button onclick="signOut()" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85em;">Sign Out</button>
+                    </div>
                 </div>
             </div>
         </header>
@@ -1242,7 +1246,7 @@
             // Check if driver name is allowed
             if (!ALLOWED_USERS[driverName]) {
                 console.log('Driver not found in ALLOWED_USERS');
-                alert('⛔ Access Denied\n\nDriver name "' + driverName + '" is not authorized.\n\nAllowed drivers: ' + Object.keys(ALLOWED_USERS).join(', '));
+                alert('⛔ Access Denied\n\nDriver name "' + driverName + '" is not authorized.');
                 return;
             }
             
