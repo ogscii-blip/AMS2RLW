@@ -1225,20 +1225,34 @@
 
         // Initialize Google Sign-In
         function initGoogleSignIn() {
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: handleCredentialResponse
-            });
+            // Wait for Google Sign-In library to load
+            if (typeof google === 'undefined' || !google.accounts) {
+                console.log('Waiting for Google Sign-In library to load...');
+                setTimeout(initGoogleSignIn, 100);
+                return;
+            }
             
-            google.accounts.id.renderButton(
-                document.getElementById('signInButton'),
-                { 
-                    theme: 'filled_blue', 
-                    size: 'large',
-                    text: 'signin_with',
-                    shape: 'rectangular'
-                }
-            );
+            try {
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleCredentialResponse
+                });
+                
+                google.accounts.id.renderButton(
+                    document.getElementById('signInButton'),
+                    { 
+                        theme: 'filled_blue', 
+                        size: 'large',
+                        text: 'signin_with',
+                        shape: 'rectangular'
+                    }
+                );
+                
+                console.log('Google Sign-In initialized successfully');
+            } catch (error) {
+                console.error('Error initializing Google Sign-In:', error);
+                document.getElementById('signInButton').innerHTML = '<p style="color: red;">⚠️ Sign-in initialization failed. Please refresh the page.</p>';
+            }
         }
 
         function handleCredentialResponse(response) {
