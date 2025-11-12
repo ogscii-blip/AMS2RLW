@@ -1058,6 +1058,22 @@
                     <strong>Note:</strong> 1st place drivers don't receive bonus points for purple sectors, but they are still tracked!
                 </p>
             </div>
+
+            <div style="background: #e8f5e9; padding: 20px; border-radius: 10px; margin-top: 20px; color: #2e7d32;">
+                <h3 style="color: #2e7d32; margin-bottom: 15px;">🏆 Championship Tie-Breakers</h3>
+                <p style="line-height: 1.8;">
+                    If two or more drivers have the same number of points, the following tie-breakers are used <strong>in order</strong>:
+                </p>
+                <ol style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                    <li><strong>Total Wins:</strong> Driver with more 1st place finishes ranks higher</li>
+                    <li><strong>Total Purple Sectors:</strong> If still tied, driver with more purple sectors ranks higher</li>
+                    <li><strong>Head-to-Head:</strong> If still tied, head-to-head record between tied drivers</li>
+                </ol>
+                <p style="margin-top: 15px; font-style: italic;">
+                    Example: If both drivers have 20 points, the driver with more wins ranks higher. If they have the same wins, 
+                    the driver with more purple sectors ranks higher.
+                </p>
+            </div>
         </div>
     </div>
 
@@ -1453,10 +1469,32 @@
                         return {
                             driver: cols[0],
                             totalPoints: parseInt(cols[1]) || 0,
-                            position: parseInt(cols[2]) || 0
+                            purpleSectors: parseInt(cols[2]) || 0,
+                            wins: parseInt(cols[3]) || 0
                         };
                     })
                     .filter(row => row.driver);
+                
+                // Sort by: 1) Total Points (desc), 2) Wins (desc), 3) Purple Sectors (desc)
+                leaderboard.sort((a, b) => {
+                    // Primary: Total Points
+                    if (b.totalPoints !== a.totalPoints) {
+                        return b.totalPoints - a.totalPoints;
+                    }
+                    // Tie-breaker 1: Wins
+                    if (b.wins !== a.wins) {
+                        return b.wins - a.wins;
+                    }
+                    // Tie-breaker 2: Purple Sectors
+                    return b.purpleSectors - a.purpleSectors;
+                });
+                
+                // Assign positions based on ranking
+                leaderboard.forEach((row, index) => {
+                    row.position = index + 1;
+                });
+                
+                console.log('Leaderboard with calculated positions:', leaderboard);
                 
                 // Calculate stats for each driver
                 const drivers = {};
