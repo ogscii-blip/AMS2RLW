@@ -1072,8 +1072,12 @@
                 const results = roundGroups[round];
                 
                 // Get track and car info from first result
-                const trackLayout = results[0].trackLayout || '';
-                const car = results[0].car || '';
+                const trackLayout = results[0].trackLayout?.trim() || '';
+                const car = results[0].car?.trim() || '';
+                
+                console.log(`Round ${round} - Track: "${trackLayout}", Car: "${car}"`);
+                console.log('Available cars in carsMap:', Object.keys(carsMap));
+                
                 const trackImage = tracksMap[trackLayout] || fallbackTrackImage;
                 const carImage = carsMap[car] || fallbackCarImage;
                 
