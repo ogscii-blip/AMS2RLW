@@ -315,7 +315,7 @@
 
             /* Better mobile table cards with compact layout */
             .leaderboard-table thead {
-                display: none !important;
+                display: none;
             }
 
             .leaderboard-table,
@@ -326,21 +326,21 @@
             }
 
             .leaderboard-table tr {
-                margin-bottom: 12px;
+                margin-bottom: 15px;
                 border: 2px solid #e0e0e0;
                 border-radius: 10px;
-                padding: 12px;
+                padding: 15px;
                 background: white;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             }
 
             .leaderboard-table td {
                 display: grid;
-                grid-template-columns: 110px 1fr;
-                padding: 8px 0;
+                grid-template-columns: 120px 1fr;
+                padding: 10px 0;
                 border: none;
                 text-align: left;
-                gap: 12px;
+                gap: 15px;
                 align-items: center;
             }
 
@@ -349,7 +349,6 @@
                 font-weight: 600;
                 color: #667eea;
                 text-align: left;
-                font-size: 0.9em;
             }
 
             .leaderboard-table td:not(:last-child) {
@@ -409,7 +408,9 @@
             }
 
             .round-banner-icons {
-                display: none !important;
+                flex-direction: row;
+                width: 100%;
+                justify-content: space-around;
             }
 
             .container {
@@ -2159,7 +2160,7 @@
         }
 
         // Check for existing session on page load
-        async function checkExistingSession() {
+        function checkExistingSession() {
             const storedUser = sessionStorage.getItem('currentUser');
             
             if (storedUser) {
@@ -2168,22 +2169,6 @@
                 document.getElementById('loginForm').style.display = 'none';
                 document.getElementById('userInfo').style.display = 'block';
                 document.getElementById('userName').textContent = currentUser.name;
-                
-                // Wait for profiles to load before setting photo
-                await new Promise(resolve => {
-                    const checkProfiles = setInterval(() => {
-                        if (Object.keys(DRIVER_PROFILES).length > 0) {
-                            clearInterval(checkProfiles);
-                            resolve();
-                        }
-                    }, 100);
-                    
-                    // Timeout after 3 seconds
-                    setTimeout(() => {
-                        clearInterval(checkProfiles);
-                        resolve();
-                    }, 3000);
-                });
                 
                 // Set profile photo and number if available
                 const profile = DRIVER_PROFILES[currentUser.email];
