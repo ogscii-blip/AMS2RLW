@@ -1155,6 +1155,31 @@
     }
 }
 
+        // Format driver name as "N. Surname - #"
+        function getFormattedDriverName(driverLoginName) {
+            // Find driver profile by matching login name to email
+            let profile = null;
+            
+            // Try to find profile by email lookup
+            for (const loginName in ALLOWED_USERS) {
+                if (loginName === driverLoginName) {
+                    const email = ALLOWED_USERS[loginName].email;
+                    if (DRIVER_PROFILES[email]) {
+                        profile = DRIVER_PROFILES[email];
+                        break;
+                    }
+                }
+            }
+            
+            // If profile found, format as "N. Surname - #"
+            if (profile && profile.surname && profile.number) {
+                return `${profile.name.charAt(0)}. ${profile.surname} - ${profile.number}`;
+            }
+            
+            // Fallback to login name
+            return driverLoginName;
+        }
+
         async function loadRoundsCount() {
             const timestamp = new Date().getTime();
             const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
@@ -1194,10 +1219,11 @@
                 if (index === 2) tr.classList.add('position-3');
                 
                 const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+                const formattedName = getFormattedDriverName(row.driver);
                 
                 tr.innerHTML = `
                     <td><span class="medal">${medal}</span>${row.position}</td>
-                    <td><strong>${row.driver}</strong></td>
+                    <td><strong>${formattedName}</strong></td>
                     <td><strong>${row.points}</strong></td>
                     <td>${row.purpleSectors}</td>
                     <td>${row.wins}</td>
@@ -2694,7 +2720,7 @@
                                 <h4>🏆 This Round's Best</h4>
                                 <div class="best-time-item gold">
                                     <div>
-                                        <div class="best-time-label">${bestRoundTime.driver}</div>
+                                        <div class="best-time-label">${getFormattedDriverName(bestRoundTime.driver)}</div>
                                         <div class="best-time-context">Round ${setup.round}</div>
                                     </div>
                                     <div class="best-time-value">${formatTime(bestRoundTime.totalTime)}</div>
@@ -2707,28 +2733,28 @@
                                 <h4>⚡ All-Time Best (This Combo)</h4>
                                 <div class="best-time-item">
                                     <div>
-                                        <div class="best-time-label">Lap: ${bestComboTime.driver}</div>
+                                        <div class="best-time-label">Lap: ${getFormattedDriverName(bestComboTime.driver)}</div>
                                         <div class="best-time-context">Round ${bestComboTime.round}</div>
                                     </div>
                                     <div class="best-time-value">${formatTime(bestComboTime.totalTime)}</div>
                                 </div>
                                 <div class="best-time-item">
                                     <div>
-                                        <div class="best-time-label">S1: ${bestSector1.driver}</div>
+                                        <div class="best-time-label">S1: ${getFormattedDriverName(bestSector1.driver)}</div>
                                         <div class="best-time-context">Round ${bestSector1.round}</div>
                                     </div>
                                     <div class="best-time-value">${formatTime(bestSector1.sector1)}</div>
                                 </div>
                                 <div class="best-time-item">
                                     <div>
-                                        <div class="best-time-label">S2: ${bestSector2.driver}</div>
+                                        <div class="best-time-label">S2: ${getFormattedDriverName(bestSector2.driver)}</div>
                                         <div class="best-time-context">Round ${bestSector2.round}</div>
                                     </div>
                                     <div class="best-time-value">${formatTime(bestSector2.sector2)}</div>
                                 </div>
                                 <div class="best-time-item">
                                     <div>
-                                        <div class="best-time-label">S3: ${bestSector3.driver}</div>
+                                        <div class="best-time-label">S3: ${getFormattedDriverName(bestSector3.driver)}</div>
                                         <div class="best-time-context">Round ${bestSector3.round}</div>
                                     </div>
                                     <div class="best-time-value">${formatTime(bestSector3.sector3)}</div>
