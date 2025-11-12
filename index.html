@@ -1750,7 +1750,14 @@
                 displayRoundCards(setupData, roundData, tracksMap, carsMap);
             } catch (error) {
                 console.error('Error loading round setup with best times:', error);
-                document.getElementById('setup-cards-loading').textContent = 'Error loading data. Please try again.';
+                const loadingDiv = document.getElementById('setup-cards-loading');
+                loadingDiv.innerHTML = `
+                    <div style="padding: 20px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; color: #721c24;">
+                        <strong>⚠️ Error loading data</strong>
+                        <p style="margin: 10px 0 0 0;">Error: ${error.message}</p>
+                        <p style="margin: 5px 0 0 0; font-size: 0.9em;">Check browser console (F12) for more details.</p>
+                    </div>
+                `;
             }
         }
 
