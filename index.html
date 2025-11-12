@@ -756,6 +756,14 @@
         <div id="overall" class="tab-content active">
             <h2>🏆 Championship Standings</h2>
             
+            <div style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center;">
+                <label for="seasonSelect" style="font-weight: bold; color: #333;">Season:</label>
+                <select id="seasonSelect" onchange="loadLeaderboard()" 
+                        style="padding: 8px 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; background: white;">
+                    <option value="">All Seasons</option>
+                </select>
+            </div>
+            
             <div class="stats-grid">
                 <div class="stat-card">
                     <h3 id="totalRounds">-</h3>
@@ -848,14 +856,17 @@
                         </div>
 
                         <div>
-                            <label for="profilePhotoUrl" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Photo URL:</label>
-                            <input type="url" id="profilePhotoUrl" 
-                                   style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
-                            <small style="color: #666;">
-                                <strong>How to add your photo:</strong><br>
-                                1. Upload your photo to <a href="https://drive.google.com/drive/folders/1xUB0OBAXokncQMeXlGUXvt3TSjsujGcg" target="_blank" style="color: #667eea;">Driver Photos folder</a><br>
-                                2. Right-click your photo → Share → Copy link<br>
-                                3. Paste the link here, or use format: https://drive.google.com/uc?id=FILE_ID
+                            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Profile Photo:</label>
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                <input type="file" id="photoFile" accept="image/*" 
+                                       style="padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 0.9em;">
+                                <div id="photoPreview" style="display: none;">
+                                    <img id="photoPreviewImg" src="" alt="Preview" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #667eea;">
+                                </div>
+                            </div>
+                            <input type="hidden" id="profilePhotoUrl">
+                            <small style="color: #666; display: block; margin-top: 5px;">
+                                Select an image file - it will be automatically uploaded to the Driver Photos folder.
                             </small>
                         </div>
 
@@ -2006,6 +2017,30 @@
             document.getElementById('profileNumber').value = profile.number || '';
             document.getElementById('profilePhotoUrl').value = profile.photoUrl || '';
             document.getElementById('profileBio').value = profile.bio || '';
+            
+            // Show current photo if exists
+            if (profile.photoUrl) {
+                document.getElementById('photoPreviewImg').src = profile.photoUrl;
+                document.getElementById('photoPreview').style.display = 'block';
+            }
+            
+            // Setup photo file handler (only once)
+            const photoFile = document.getElementById('photoFile');
+            if (!photoFile.hasAttribute('data-listener')) {
+                photoFile.setAttribute('data-listener', 'true');
+                photoFile.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        // Show preview
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            document.getElementById('photoPreviewImg').src = event.target.result;
+                            document.getElementById('photoPreview').style.display = 'block';
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
         }
 
         // Convert Google Drive share link to direct image URL
@@ -2049,16 +2084,62 @@
             const name = document.getElementById('profileName').value.trim();
             const surname = document.getElementById('profileSurname').value.trim();
             const number = document.getElementById('profileNumber').value;
-            let photoUrl = document.getElementById('profilePhotoUrl').value.trim();
             const bio = document.getElementById('profileBio').value.trim();
-            
-            // Convert Google Drive URL if needed
-            photoUrl = convertGoogleDriveUrl(photoUrl);
+            let photoUrl = document.getElementById('profilePhotoUrl').value.trim();
             
             const messageDiv = document.getElementById('profileMessage');
             messageDiv.style.display = 'block';
             messageDiv.style.background = '#d1ecf1';
             messageDiv.style.color = '#0c5460';
+            
+            // Check if there's a new photo file to upload
+            const photoFile = document.getElementById('photoFile').files[0];
+            
+            if (photoFile) {
+                messageDiv.textContent = '⏳ Uploading photo...';
+                
+                try {
+                    // Convert image to base64
+                    const base64Image = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            const base64 = reader.result.split(',')[1];
+                            resolve(base64);
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(photoFile);
+                    });
+                    
+                    // Upload photo via Apps Script
+                    const uploadResponse = await fetch(APPS_SCRIPT_URL + '?action=uploadPhoto', {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            fileName: `${currentUser.name}_${Date.now()}.${photoFile.name.split('.').pop()}`,
+                            mimeType: photoFile.type,
+                            data: base64Image,
+                            folderId: '1xUB0OBAXokncQMeXlGUXvt3TSjsujGcg'
+                        })
+                    });
+                    
+                    const uploadResult = await uploadResponse.json();
+                    if (uploadResult.success) {
+                        photoUrl = uploadResult.url;
+                    } else {
+                        throw new Error('Photo upload failed');
+                    }
+                } catch (error) {
+                    console.error('Error uploading photo:', error);
+                    messageDiv.style.background = '#f8d7da';
+                    messageDiv.style.color = '#721c24';
+                    messageDiv.textContent = '❌ Error uploading photo. Saving profile without photo...';
+                    // Continue without photo
+                }
+            }
+            
             messageDiv.textContent = '⏳ Saving profile...';
             
             try {
