@@ -1187,6 +1187,7 @@
 
         // Simple Password Authentication
         let ALLOWED_USERS = {}; // Structure: { "Olaf": { email: "...", password: "..." } }
+        let APPS_SCRIPT_URL = null;
         
         let currentUser = null;
 
@@ -1212,6 +1213,9 @@
                     }
                 });
                 
+                // Get Apps Script URL
+                APPS_SCRIPT_URL = configMap['apps_script_url'];
+                
                 // Build ALLOWED_USERS from the config map
                 for (let i = 1; i <= 10; i++) { // Check up to 10 users
                     const name = configMap['allowed_name_' + i];
@@ -1227,6 +1231,7 @@
                 }
                 
                 console.log('Config loaded. Allowed users:', Object.keys(ALLOWED_USERS));
+                console.log('Apps Script URL:', APPS_SCRIPT_URL ? 'Loaded' : 'Not found');
             } catch (error) {
                 console.error('Error loading config:', error);
                 alert('⚠️ Failed to load configuration. Please refresh the page.');
@@ -1451,49 +1456,39 @@
                 messageDiv.style.display = 'block';
                 messageDiv.style.background = '#f8d7da';
                 messageDiv.style.color = '#721c24';
-                messageDiv.textContent = '❌ Invalid time format. Please ensure all sectors are in mm:ss,mmm format.';
+                messageDiv.textContent = '❌ Invalid time format. Please ensure all sectors are filled in correctly.';
                 return;
             }
             
-            // Build the Google Form URL
-            const formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSfS_nBrKCam6HI5Gc4q6lKMwtRhCm9Q9GF9H6y9yiPH4mJGFA/formResponse';
-            const params = new URLSearchParams({
-                'entry.638450376': roundNumber,
-                'entry.1540653511': sector1,
-                'entry.1931020399': sector2,
-                'entry.71605238': sector3
-            });
+            // Show submitting message
+            messageDiv.style.display = 'block';
+            messageDiv.style.background = '#d1ecf1';
+            messageDiv.style.color = '#0c5460';
+            messageDiv.textContent = '⏳ Submitting lap time...';
             
             try {
-                // Create a hidden iframe to submit the form
-                const iframe = document.createElement('iframe');
-                iframe.style.display = 'none';
-                iframe.name = 'hidden_iframe';
-                document.body.appendChild(iframe);
+                // Check if Apps Script URL is configured
+                if (!APPS_SCRIPT_URL) {
+                    throw new Error('Apps Script URL not configured. Please add apps_script_url to Config sheet.');
+                }
                 
-                // Create a temporary form
-                const tempForm = document.createElement('form');
-                tempForm.target = 'hidden_iframe';
-                tempForm.method = 'POST';
-                tempForm.action = formUrl;
-                
-                // Add form fields
-                params.forEach((value, key) => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = key;
-                    input.value = value;
-                    tempForm.appendChild(input);
+                // Submit to Google Apps Script Web App
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        timestamp: new Date().toISOString(),
+                        driver: currentUser.name,
+                        email: currentUser.email,
+                        round: roundNumber,
+                        sector1: sector1,
+                        sector2: sector2,
+                        sector3: sector3
+                    })
                 });
-                
-                document.body.appendChild(tempForm);
-                tempForm.submit();
-                
-                // Clean up
-                setTimeout(() => {
-                    document.body.removeChild(tempForm);
-                    document.body.removeChild(iframe);
-                }, 1000);
                 
                 messageDiv.style.display = 'block';
                 messageDiv.style.background = '#d4edda';
@@ -1512,7 +1507,7 @@
                 messageDiv.style.display = 'block';
                 messageDiv.style.background = '#f8d7da';
                 messageDiv.style.color = '#721c24';
-                messageDiv.textContent = '❌ Error submitting lap time. Please try again.';
+                messageDiv.textContent = '❌ ' + error.message;
             }
         });
 
