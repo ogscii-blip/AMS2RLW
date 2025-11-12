@@ -734,8 +734,14 @@
                     </div>
                     <div id="userInfo" style="display: none; background: rgba(255,255,255,0.15); padding: 12px 16px; border-radius: 8px; backdrop-filter: blur(10px);">
                         <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px;">
-                            <span style="font-size: 0.95em; color: white;">👤 <strong id="userName"></strong></span>
-                            <button onclick="signOut()" style="background: #dc3545; color: white; border: none; padding: 6px 14px; border-radius: 5px; cursor: pointer; font-size: 0.85em; font-weight: 500;">Sign Out</button>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <img id="userProfilePhoto" src="" alt="Profile" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid white; object-fit: cover; display: none;">
+                                <span style="font-size: 0.95em; color: white;"><strong id="userName"></strong></span>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="showTab('profile')" style="background: #667eea; color: white; border: none; padding: 6px 14px; border-radius: 5px; cursor: pointer; font-size: 0.85em; font-weight: 500;">My Profile</button>
+                                <button onclick="signOut()" style="background: #dc3545; color: white; border: none; padding: 6px 14px; border-radius: 5px; cursor: pointer; font-size: 0.85em; font-weight: 500;">Sign Out</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -745,10 +751,9 @@
         <div class="tabs">
             <button class="tab-button active" onclick="showTab('overall')">Overall Standings</button>
             <button class="tab-button" onclick="showTab('round')">Round Results</button>
-            <button class="tab-button" onclick="showTab('drivers')">Drivers</button>
-            <button class="tab-button" onclick="showTab('profile')">My Profile</button>
-            <button class="tab-button" onclick="showTab('setup')">Round Setup</button>
             <button class="tab-button" onclick="showTab('submit')">Submit Time</button>
+            <button class="tab-button" onclick="showTab('setup')">Round Setup</button>
+            <button class="tab-button" onclick="showTab('drivers')">Drivers</button>
             <button class="tab-button" onclick="showTab('rules')">Rules & Scoring</button>
         </div>
 
@@ -1964,6 +1969,22 @@
             document.getElementById('userInfo').style.display = 'block';
             document.getElementById('userName').textContent = currentUser.name;
             
+            // Set profile photo if available
+            const profile = DRIVER_PROFILES[currentUser.email];
+            const photoElement = document.getElementById('userProfilePhoto');
+            if (profile && profile.photoUrl) {
+                // Convert to Google Drive thumbnail format
+                let photoUrl = profile.photoUrl;
+                if (photoUrl.includes('drive.google.com/uc?id=')) {
+                    const fileId = photoUrl.split('id=')[1];
+                    photoUrl = `https://lh3.googleusercontent.com/d/${fileId}=s100`;
+                }
+                photoElement.src = photoUrl;
+                photoElement.style.display = 'block';
+            } else {
+                photoElement.style.display = 'none';
+            }
+            
             // Store in sessionStorage
             sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
             
@@ -2002,6 +2023,22 @@
                 document.getElementById('loginForm').style.display = 'none';
                 document.getElementById('userInfo').style.display = 'block';
                 document.getElementById('userName').textContent = currentUser.name;
+                
+                // Set profile photo if available
+                const profile = DRIVER_PROFILES[currentUser.email];
+                const photoElement = document.getElementById('userProfilePhoto');
+                if (profile && profile.photoUrl) {
+                    // Convert to Google Drive thumbnail format
+                    let photoUrl = profile.photoUrl;
+                    if (photoUrl.includes('drive.google.com/uc?id=')) {
+                        const fileId = photoUrl.split('id=')[1];
+                        photoUrl = `https://lh3.googleusercontent.com/d/${fileId}=s100`;
+                    }
+                    photoElement.src = photoUrl;
+                    photoElement.style.display = 'block';
+                } else {
+                    photoElement.style.display = 'none';
+                }
                 
                 updateSubmitTabVisibility();
             }
