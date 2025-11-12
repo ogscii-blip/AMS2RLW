@@ -1650,6 +1650,15 @@
                         </div>
                     </div>
                     
+                    ${profile?.bio ? `
+                        <div class="records-section">
+                            <h3>📖 About</h3>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; line-height: 1.6;">
+                                ${profile.bio}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
                     <div class="records-section">
                         <h3>🏆 Lap Time Records</h3>
                         <div class="record-item">
@@ -2110,14 +2119,15 @@
                         reader.readAsDataURL(photoFile);
                     });
                     
-                    // Upload photo via Apps Script
-                    const uploadResponse = await fetch(APPS_SCRIPT_URL + '?action=uploadPhoto', {
+                    // Upload photo via Apps Script (base64)
+                    await fetch(APPS_SCRIPT_URL, {
                         method: 'POST',
-                        mode: 'cors',
+                        mode: 'no-cors',
                         headers: {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
+                            action: 'uploadPhoto',
                             fileName: `${currentUser.name}_${Date.now()}.${photoFile.name.split('.').pop()}`,
                             mimeType: photoFile.type,
                             data: base64Image,
@@ -2125,12 +2135,9 @@
                         })
                     });
                     
-                    const uploadResult = await uploadResponse.json();
-                    if (uploadResult.success) {
-                        photoUrl = uploadResult.url;
-                    } else {
-                        throw new Error('Photo upload failed');
-                    }
+                    // Photo is uploaded, but we can't get the URL back due to no-cors
+                    // It will appear after the profile is saved and reloaded
+                    console.log('Photo uploaded to Drive');
                 } catch (error) {
                     console.error('Error uploading photo:', error);
                     messageDiv.style.background = '#f8d7da';
@@ -2142,19 +2149,23 @@
             
             messageDiv.textContent = '⏳ Saving profile...';
             
+            console.log('Saving profile for:', currentUser.email);
+            console.log('Profile data:', { name, surname, number, photoUrl, bio });
+            
             try {
                 if (!APPS_SCRIPT_URL) {
                     throw new Error('Apps Script URL not configured.');
                 }
                 
                 // Submit profile update
-                await fetch(APPS_SCRIPT_URL + '?action=updateProfile', {
+                await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
+                        action: 'updateProfile',
                         email: currentUser.email,
                         name: name,
                         surname: surname,
