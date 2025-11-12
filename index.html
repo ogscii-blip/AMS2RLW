@@ -493,6 +493,8 @@
             /* Mobile profile layout - name, photo, stacked buttons */
             #userInfo {
                 padding: 15px !important;
+                margin: 0 -10px !important; /* Extend to edges minus container padding */
+                border-radius: 8px !important;
             }
 
             #userInfo > div {
@@ -501,16 +503,9 @@
                 gap: 12px !important;
             }
 
-            /* Name at top, centered */
-            #userName {
-                font-size: 1.05em !important;
-                text-align: center;
-                order: 1;
-            }
-
-            /* Photo in middle, bigger */
+            /* Reorder elements: name -> photo -> buttons */
             #userPhotoContainer {
-                order: 2;
+                order: 2 !important;
                 flex-shrink: 0;
             }
 
@@ -528,23 +523,40 @@
             }
 
             #userIconFallback {
-                order: 2;
+                order: 2 !important;
                 font-size: 3em !important;
             }
 
-            /* Buttons container at bottom */
-            #userInfo > div > div:first-child {
-                order: 3;
+            /* Name at top, centered */
+            #userInfo > div > div:last-child {
+                order: 1 !important;
                 display: flex;
                 flex-direction: column !important;
+                align-items: center !important;
                 gap: 8px !important;
                 width: 100%;
             }
 
+            #userName {
+                font-size: 1.05em !important;
+                text-align: center;
+                order: 1 !important;
+            }
+
+            /* Buttons at bottom */
             #userInfo button {
                 font-size: 0.9em !important;
                 padding: 10px 20px !important;
                 width: 100% !important;
+                order: 3 !important;
+            }
+
+            #userInfo button:first-of-type {
+                order: 3 !important;
+            }
+
+            #userInfo button:last-of-type {
+                order: 4 !important;
             }
         }
 
@@ -934,14 +946,7 @@
                     </div>
                     <div id="userInfo" style="display: none; background: rgba(255,255,255,0.15); padding: 16px 20px; border-radius: 12px; backdrop-filter: blur(10px);">
                         <div style="display: flex; align-items: center; gap: 15px;">
-                            <!-- Name and Buttons Column -->
-                            <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
-                                <span style="font-size: 1.1em; color: white; font-weight: 600; margin-bottom: 4px;" id="userName"></span>
-                                <button onclick="showTab('profile')" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500; transition: background 0.2s; width: 100%;">My Profile</button>
-                                <button onclick="signOut()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500; transition: background 0.2s; width: 100%;">Sign Out</button>
-                            </div>
-                            
-                            <!-- Profile Photo with Number Badge -->
+                            <!-- Profile Photo with Number Badge (LEFT) -->
                             <div id="userPhotoContainer" style="position: relative; display: none; flex-shrink: 0;">
                                 <img id="userProfilePhoto" src="" alt="Profile" 
                                      style="width: 70px; height: 70px; border-radius: 50%; border: 3px solid white; object-fit: cover; display: block;">
@@ -955,6 +960,13 @@
                             
                             <!-- Fallback if no photo -->
                             <div id="userIconFallback" style="display: none; font-size: 2.5em; flex-shrink: 0;">👤</div>
+                            
+                            <!-- Name and Buttons Column (RIGHT) -->
+                            <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+                                <span style="font-size: 1.1em; color: white; font-weight: 600; margin-bottom: 4px;" id="userName"></span>
+                                <button onclick="showTab('profile')" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500; transition: background 0.2s; width: 100%;">My Profile</button>
+                                <button onclick="signOut()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500; transition: background 0.2s; width: 100%;">Sign Out</button>
+                            </div>
                         </div>
                     </div>
                 </div>
