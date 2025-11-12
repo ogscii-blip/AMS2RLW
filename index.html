@@ -1205,8 +1205,8 @@
                         digit = (e.keyCode - 48).toString();
                     }
                     
-                    // Add digit if under limit
-                    if (rawValue.length < 5) {
+                    // Add digit if under limit (7 digits: mmssmmm)
+                    if (rawValue.length < 7) {
                         rawValue += digit;
                         updateDisplay(input, rawValue);
                     }
@@ -1216,7 +1216,7 @@
                     e.preventDefault();
                     const pastedText = (e.clipboardData || window.clipboardData).getData('text');
                     const digits = pastedText.replace(/[^0-9]/g, '');
-                    rawValue = digits.slice(-5); // Take last 5 digits
+                    rawValue = digits.slice(-7); // Take last 7 digits
                     updateDisplay(input, rawValue);
                 });
                 
@@ -1235,11 +1235,11 @@
                         return;
                     }
                     
-                    // Pad with zeros on the left
-                    const padded = raw.padStart(5, '0');
+                    // Pad to 7 digits on the left (mmssmmm)
+                    const padded = raw.padStart(7, '0');
                     
                     // Format as mm:ss,mmm
-                    const formatted = padded.slice(0, 2) + ':' + padded.slice(2, 4) + ',' + padded.slice(4);
+                    const formatted = padded.slice(0, 2) + ':' + padded.slice(2, 4) + ',' + padded.slice(4, 7);
                     input.value = formatted;
                 }
             });
