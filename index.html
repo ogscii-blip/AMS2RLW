@@ -1593,13 +1593,39 @@
                 const driverCard = document.createElement('div');
                 driverCard.className = 'driver-card';
                 
-                // Get profile data by matching driver name to email
+                // Get profile data by matching driver name
+                // Driver name comes from Round Data (login name like "Olaf")
+                // Profile name comes from Driver Profiles sheet
                 let profile = null;
+                
+                console.log('Looking for profile for driver:', driver.name);
+                console.log('Available profiles:', DRIVER_PROFILES);
+                
+                // First try: match by name in profile
                 for (const email in DRIVER_PROFILES) {
                     if (DRIVER_PROFILES[email].name === driver.name) {
                         profile = DRIVER_PROFILES[email];
+                        console.log('Matched profile by name:', profile);
                         break;
                     }
+                }
+                
+                // Second try: match by email lookup through ALLOWED_USERS
+                if (!profile) {
+                    for (const loginName in ALLOWED_USERS) {
+                        if (loginName === driver.name) {
+                            const email = ALLOWED_USERS[loginName].email;
+                            if (DRIVER_PROFILES[email]) {
+                                profile = DRIVER_PROFILES[email];
+                                console.log('Matched profile by email:', profile);
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (!profile) {
+                    console.warn('No profile found for driver:', driver.name);
                 }
                 
                 // Use profile data if available, otherwise use defaults
