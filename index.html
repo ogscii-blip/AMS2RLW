@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AMS2 Racing League</title>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         * {
             margin: 0;
@@ -576,7 +575,11 @@
             <h1>🏁 AMS2 Racing League 🏁</h1>
             <p>Compete for glory on the virtual track</p>
             <div id="authSection" style="margin-top: 20px;">
-                <div id="signInButton"></div>
+                <div id="loginForm" style="display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                    <input type="text" id="driverNameInput" placeholder="Driver Name" style="padding: 10px; border-radius: 5px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.9); font-size: 1em;">
+                    <input type="password" id="passwordInput" placeholder="Password" style="padding: 10px; border-radius: 5px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.9); font-size: 1em;">
+                    <button onclick="login()" style="background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 1em;">Sign In</button>
+                </div>
                 <div id="userInfo" style="display: none;">
                     <p style="margin: 5px 0;">Signed in as: <strong id="userName"></strong></p>
                     <button onclick="signOut()" style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-top: 5px;">Sign Out</button>
@@ -1176,12 +1179,10 @@
             return `${mm}:${ss},${ms}`;
         }
 
-        // Google Sign-In Configuration
-        let ALLOWED_EMAILS = {};
-        let GOOGLE_CLIENT_ID = null;
+        // Simple Password Authentication
+        let ALLOWED_USERS = {}; // Structure: { "Olaf": { email: "...", password: "..." } }
         
         let currentUser = null;
-        let googleIdToken = null;
 
         // Load configuration from Google Sheets
         async function loadConfig() {
@@ -1198,112 +1199,79 @@
                         const setting = cols[0];
                         const value = cols[1];
                         
-                        if (setting === 'google_client_id') {
-                            GOOGLE_CLIENT_ID = value;
-                        } else if (setting.startsWith('allowed_email_')) {
-                            const nameKey = setting.replace('allowed_email_', 'allowed_name_');
-                            const nameRow = rows.find(r => r.startsWith(nameKey));
-                            if (nameRow) {
-                                const nameCols = nameRow.split(',');
-                                ALLOWED_EMAILS[value] = nameCols[1];
+                        if (setting.startsWith('allowed_name_')) {
+                            const number = setting.replace('allowed_name_', '');
+                            const emailKey = 'allowed_email_' + number;
+                            const passwordKey = 'allowed_password_' + number;
+                            
+                            const emailRow = rows.find(r => r.startsWith(emailKey));
+                            const passwordRow = rows.find(r => r.startsWith(passwordKey));
+                            
+                            if (emailRow && passwordRow) {
+                                const emailCols = emailRow.split(',');
+                                const passwordCols = passwordRow.split(',');
+                                
+                                ALLOWED_USERS[value] = {
+                                    email: emailCols[1],
+                                    password: passwordCols[1]
+                                };
                             }
                         }
                     }
                 });
                 
-                // Initialize Google Sign-In after loading config
-                if (GOOGLE_CLIENT_ID) {
-                    initGoogleSignIn();
-                } else {
-                    console.error('Google Client ID not found in Config sheet');
-                    document.getElementById('signInButton').innerHTML = '<p style="color: red;">⚠️ Sign-in not configured. Please add google_client_id to Config sheet.</p>';
-                }
+                console.log('Config loaded successfully');
             } catch (error) {
                 console.error('Error loading config:', error);
             }
         }
 
-        // Initialize Google Sign-In
-        function initGoogleSignIn() {
-            // Wait for Google Sign-In library to load
-            if (typeof google === 'undefined' || !google.accounts) {
-                console.log('Waiting for Google Sign-In library to load...');
-                setTimeout(initGoogleSignIn, 100);
+        function login() {
+            const driverName = document.getElementById('driverNameInput').value.trim();
+            const password = document.getElementById('passwordInput').value;
+            
+            if (!driverName || !password) {
+                alert('⚠️ Please enter both driver name and password.');
                 return;
             }
             
-            try {
-                google.accounts.id.initialize({
-                    client_id: GOOGLE_CLIENT_ID,
-                    callback: handleCredentialResponse
-                });
-                
-                google.accounts.id.renderButton(
-                    document.getElementById('signInButton'),
-                    { 
-                        theme: 'filled_blue', 
-                        size: 'large',
-                        text: 'signin_with',
-                        shape: 'rectangular'
-                    }
-                );
-                
-                console.log('Google Sign-In initialized successfully');
-            } catch (error) {
-                console.error('Error initializing Google Sign-In:', error);
-                document.getElementById('signInButton').innerHTML = '<p style="color: red;">⚠️ Sign-in initialization failed. Please refresh the page.</p>';
+            // Check if driver name is allowed
+            if (!ALLOWED_USERS[driverName]) {
+                alert('⛔ Access Denied\n\nDriver name "' + driverName + '" is not authorized.\n\nAllowed drivers: ' + Object.keys(ALLOWED_USERS).join(', '));
+                return;
             }
-        }
-
-        function handleCredentialResponse(response) {
-            // Decode JWT token to get user info
-            const userObject = parseJwt(response.credential);
-            const userEmail = userObject.email;
             
-            // Check if email is in allowed list
-            if (ALLOWED_EMAILS[userEmail]) {
-                currentUser = {
-                    email: userEmail,
-                    name: ALLOWED_EMAILS[userEmail],
-                    fullName: userObject.name
-                };
-                googleIdToken = response.credential;
-                
-                // Update UI
-                document.getElementById('signInButton').style.display = 'none';
-                document.getElementById('userInfo').style.display = 'block';
-                document.getElementById('userName').textContent = `${currentUser.name} (${currentUser.email})`;
-                
-                // Show form if on submit tab
-                updateSubmitTabVisibility();
-                
-                // Store in sessionStorage
-                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-                sessionStorage.setItem('googleIdToken', googleIdToken);
-            } else {
-                alert('⛔ Access Denied\n\nYour email (' + userEmail + ') is not authorized to access this league.\n\nOnly registered players can submit lap times.');
-                signOut();
+            // Check password for this specific driver
+            if (password !== ALLOWED_USERS[driverName].password) {
+                alert('⛔ Incorrect password for ' + driverName + '. Please try again.');
+                return;
             }
-        }
-
-        function parseJwt(token) {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            return JSON.parse(jsonPayload);
+            
+            // Successful login
+            currentUser = {
+                name: driverName,
+                email: ALLOWED_USERS[driverName].email
+            };
+            
+            // Update UI
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'block';
+            document.getElementById('userName').textContent = currentUser.name;
+            
+            // Store in sessionStorage
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            updateSubmitTabVisibility();
         }
 
         function signOut() {
-            google.accounts.id.disableAutoSelect();
             currentUser = null;
-            googleIdToken = null;
             sessionStorage.removeItem('currentUser');
-            sessionStorage.removeItem('googleIdToken');
             
-            document.getElementById('signInButton').style.display = 'block';
+            document.getElementById('loginForm').style.display = 'flex';
             document.getElementById('userInfo').style.display = 'none';
+            document.getElementById('driverNameInput').value = '';
+            document.getElementById('passwordInput').value = '';
             
             updateSubmitTabVisibility();
         }
@@ -1321,19 +1289,39 @@
         // Check for existing session on page load
         function checkExistingSession() {
             const storedUser = sessionStorage.getItem('currentUser');
-            const storedToken = sessionStorage.getItem('googleIdToken');
             
-            if (storedUser && storedToken) {
+            if (storedUser) {
                 currentUser = JSON.parse(storedUser);
-                googleIdToken = storedToken;
                 
-                document.getElementById('signInButton').style.display = 'none';
+                document.getElementById('loginForm').style.display = 'none';
                 document.getElementById('userInfo').style.display = 'block';
-                document.getElementById('userName').textContent = `${currentUser.name} (${currentUser.email})`;
+                document.getElementById('userName').textContent = currentUser.name;
                 
                 updateSubmitTabVisibility();
             }
         }
+
+        // Allow Enter key to submit login
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('passwordInput');
+            const driverNameInput = document.getElementById('driverNameInput');
+            
+            if (passwordInput) {
+                passwordInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        login();
+                    }
+                });
+            }
+            
+            if (driverNameInput) {
+                driverNameInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        login();
+                    }
+                });
+            }
+        });
 
         // Load initial data
         window.addEventListener('load', () => {
