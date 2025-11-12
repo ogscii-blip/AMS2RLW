@@ -503,7 +503,7 @@
                 gap: 12px !important;
             }
 
-            /* Reorder elements: name -> photo -> buttons */
+            /* Photo container - order 2 (middle) */
             #userPhotoContainer {
                 order: 2 !important;
                 flex-shrink: 0;
@@ -527,28 +527,24 @@
                 font-size: 3em !important;
             }
 
-            /* Name at top, centered */
+            /* Name and buttons container - split using order on children */
             #userInfo > div > div:last-child {
-                order: 1 !important;
-                display: flex;
-                flex-direction: column !important;
-                align-items: center !important;
-                gap: 8px !important;
-                width: 100%;
+                display: contents !important; /* Remove this container from layout, let children flow */
             }
 
+            /* Name first (order 1) */
             #userName {
                 font-size: 1.05em !important;
                 text-align: center;
                 order: 1 !important;
+                width: 100%;
             }
 
-            /* Buttons at bottom */
+            /* Buttons last (order 3 and 4) */
             #userInfo button {
                 font-size: 0.9em !important;
                 padding: 10px 20px !important;
                 width: 100% !important;
-                order: 3 !important;
             }
 
             #userInfo button:first-of-type {
