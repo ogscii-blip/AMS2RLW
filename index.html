@@ -491,10 +491,19 @@
             }
 
             /* Mobile profile layout - name, photo, stacked buttons */
+            #authSection {
+                width: 100% !important;
+                min-width: auto !important;
+                display: flex !important;
+                justify-content: center !important;
+            }
+
             #userInfo {
                 padding: 15px !important;
-                margin: 0 -10px !important; /* Extend to edges minus container padding */
+                margin: 0 !important;
                 border-radius: 8px !important;
+                width: calc(100% - 20px) !important; /* Full width minus small margins */
+                max-width: 100% !important;
             }
 
             #userInfo > div {
