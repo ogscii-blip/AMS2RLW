@@ -2016,6 +2016,20 @@
                 return;
             }
             
+            // Check if Apps Script is configured
+            if (!APPS_SCRIPT_URL) {
+                document.getElementById('profileContent').innerHTML = `
+                    <div style="background: #f8d7da; padding: 20px; border-radius: 10px; color: #721c24; text-align: center;">
+                        <h3>⚠️ Configuration Error</h3>
+                        <p>Apps Script URL is not configured. Please add 'apps_script_url' to your Config sheet.</p>
+                    </div>
+                `;
+                document.getElementById('profileContent').style.display = 'block';
+                return;
+            }
+            
+            console.log('Apps Script URL loaded:', APPS_SCRIPT_URL);
+            
             document.getElementById('profileAuthWarning').style.display = 'none';
             document.getElementById('profileContent').style.display = 'block';
             
@@ -2098,66 +2112,20 @@
             
             const messageDiv = document.getElementById('profileMessage');
             messageDiv.style.display = 'block';
-            messageDiv.style.background = '#d1ecf1';
-            messageDiv.style.color = '#0c5460';
             
             // Check if there's a new photo file to upload
             const photoFile = document.getElementById('photoFile').files[0];
-            
-            if (photoFile) {
-                messageDiv.textContent = '⏳ Uploading photo...';
-                
-                try {
-                    // Convert image to base64
-                    const base64Image = await new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                            const base64 = reader.result.split(',')[1];
-                            resolve(base64);
-                        };
-                        reader.onerror = reject;
-                        reader.readAsDataURL(photoFile);
-                    });
-                    
-                    // Upload photo via Apps Script (base64)
-                    await fetch(APPS_SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            action: 'uploadPhoto',
-                            fileName: `${currentUser.name}_${Date.now()}.${photoFile.name.split('.').pop()}`,
-                            mimeType: photoFile.type,
-                            data: base64Image,
-                            folderId: '1xUB0OBAXokncQMeXlGUXvt3TSjsujGcg'
-                        })
-                    });
-                    
-                    // Photo is uploaded, but we can't get the URL back due to no-cors
-                    // It will appear after the profile is saved and reloaded
-                    console.log('Photo uploaded to Drive');
-                } catch (error) {
-                    console.error('Error uploading photo:', error);
-                    messageDiv.style.background = '#f8d7da';
-                    messageDiv.style.color = '#721c24';
-                    messageDiv.textContent = '❌ Error uploading photo. Saving profile without photo...';
-                    // Continue without photo
-                }
-            }
-            
-            messageDiv.textContent = '⏳ Saving profile...';
-            
-            console.log('Saving profile for:', currentUser.email);
-            console.log('Profile data:', { name, surname, number, photoUrl, bio });
             
             try {
                 if (!APPS_SCRIPT_URL) {
                     throw new Error('Apps Script URL not configured.');
                 }
                 
-                // Submit profile update
+                // STEP 1: Save profile first (without photo URL if uploading new photo)
+                messageDiv.style.background = '#d1ecf1';
+                messageDiv.style.color = '#0c5460';
+                messageDiv.textContent = '⏳ Saving profile...';
+                
                 await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -2170,10 +2138,45 @@
                         name: name,
                         surname: surname,
                         number: number,
-                        photoUrl: photoUrl,
+                        photoUrl: photoUrl, // Empty if uploading new photo
                         bio: bio
                     })
                 });
+                
+                // STEP 2: If there's a photo, upload it now
+                if (photoFile) {
+                    messageDiv.textContent = '⏳ Uploading photo...';
+                    
+                    // Convert image to base64
+                    const base64Image = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            const base64 = reader.result.split(',')[1];
+                            resolve(base64);
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(photoFile);
+                    });
+                    
+                    // Upload photo - Apps Script will update the photo URL in the sheet
+                    await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            action: 'uploadPhoto',
+                            fileName: `${currentUser.name}_${Date.now()}.${photoFile.name.split('.').pop()}`,
+                            mimeType: photoFile.type,
+                            data: base64Image,
+                            folderId: '1xUB0OBAXokncQMeXlGUXvt3TSjsujGcg',
+                            email: currentUser.email // Pass email so script knows which row to update
+                        })
+                    });
+                    
+                    console.log('Photo uploaded to Drive');
+                }
                 
                 // Update local cache
                 DRIVER_PROFILES[currentUser.email] = {
@@ -2182,11 +2185,22 @@
                 
                 messageDiv.style.background = '#d4edda';
                 messageDiv.style.color = '#155724';
-                messageDiv.textContent = '✅ Profile updated successfully!';
+                messageDiv.textContent = '✅ Profile updated successfully! Reloading...';
                 
-                setTimeout(() => {
-                    messageDiv.style.display = 'none';
-                }, 3000);
+                console.log('Profile data sent to sheet:', {
+                    email: currentUser.email,
+                    name, surname, number, photoUrl, bio
+                });
+                
+                // Reload profiles from sheet after a delay
+                setTimeout(async () => {
+                    await loadConfig(); // Reload all config including profiles
+                    loadProfile(); // Refresh the form display
+                    messageDiv.textContent = '✅ Profile saved and reloaded!';
+                    setTimeout(() => {
+                        messageDiv.style.display = 'none';
+                    }, 2000);
+                }, 2000);
             } catch (error) {
                 console.error('Error updating profile:', error);
                 messageDiv.style.background = '#f8d7da';
