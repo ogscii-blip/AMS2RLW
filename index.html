@@ -1193,42 +1193,46 @@
                 const csvText = await response.text();
                 const rows = csvText.split('\n').slice(1); // Skip header
                 
+                // Parse all rows into a map first
+                const configMap = {};
                 rows.forEach(row => {
                     if (row.trim()) {
                         const cols = row.split(',');
-                        const setting = cols[0];
-                        const value = cols[1];
-                        
-                        if (setting.startsWith('allowed_name_')) {
-                            const number = setting.replace('allowed_name_', '');
-                            const emailKey = 'allowed_email_' + number;
-                            const passwordKey = 'allowed_password_' + number;
-                            
-                            const emailRow = rows.find(r => r.startsWith(emailKey));
-                            const passwordRow = rows.find(r => r.startsWith(passwordKey));
-                            
-                            if (emailRow && passwordRow) {
-                                const emailCols = emailRow.split(',');
-                                const passwordCols = passwordRow.split(',');
-                                
-                                ALLOWED_USERS[value] = {
-                                    email: emailCols[1],
-                                    password: passwordCols[1]
-                                };
-                            }
+                        const setting = cols[0]?.trim();
+                        const value = cols[1]?.trim();
+                        if (setting && value) {
+                            configMap[setting] = value;
                         }
                     }
                 });
                 
-                console.log('Config loaded successfully');
+                // Build ALLOWED_USERS from the config map
+                for (let i = 1; i <= 10; i++) { // Check up to 10 users
+                    const name = configMap['allowed_name_' + i];
+                    const email = configMap['allowed_email_' + i];
+                    const password = configMap['allowed_password_' + i];
+                    
+                    if (name && email && password) {
+                        ALLOWED_USERS[name] = {
+                            email: email,
+                            password: password
+                        };
+                    }
+                }
+                
+                console.log('Config loaded. Allowed users:', Object.keys(ALLOWED_USERS));
             } catch (error) {
                 console.error('Error loading config:', error);
+                alert('⚠️ Failed to load configuration. Please refresh the page.');
             }
         }
 
         function login() {
             const driverName = document.getElementById('driverNameInput').value.trim();
             const password = document.getElementById('passwordInput').value;
+            
+            console.log('Login attempt - Driver:', driverName, 'Password:', password);
+            console.log('Available users:', ALLOWED_USERS);
             
             if (!driverName || !password) {
                 alert('⚠️ Please enter both driver name and password.');
@@ -1237,12 +1241,16 @@
             
             // Check if driver name is allowed
             if (!ALLOWED_USERS[driverName]) {
+                console.log('Driver not found in ALLOWED_USERS');
                 alert('⛔ Access Denied\n\nDriver name "' + driverName + '" is not authorized.\n\nAllowed drivers: ' + Object.keys(ALLOWED_USERS).join(', '));
                 return;
             }
             
             // Check password for this specific driver
-            if (password !== ALLOWED_USERS[driverName].password) {
+            const storedPassword = ALLOWED_USERS[driverName].password;
+            console.log('Comparing passwords - Entered:', password, 'Stored:', storedPassword);
+            
+            if (password !== storedPassword) {
                 alert('⛔ Incorrect password for ' + driverName + '. Please try again.');
                 return;
             }
