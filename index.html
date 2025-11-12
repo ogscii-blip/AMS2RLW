@@ -1174,70 +1174,74 @@
             
             sectorInputs.forEach(inputId => {
                 const input = document.getElementById(inputId);
+                let rawValue = '';
                 
-                input.addEventListener('input', function(e) {
-                    // Get cursor position before formatting
-                    const cursorPos = e.target.selectionStart;
-                    
-                    // Remove all non-digits
-                    let value = e.target.value.replace(/[^0-9]/g, '');
-                    
-                    // Limit to 5 digits max
-                    if (value.length > 5) {
-                        value = value.slice(-5); // Take last 5 digits (right-to-left behavior)
+                input.addEventListener('keydown', function(e) {
+                    // Allow: backspace, delete, tab, escape, enter, arrows, Ctrl+A, Ctrl+C, Ctrl+V
+                    if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode) ||
+                        (e.ctrlKey || e.metaKey)) {
+                        
+                        if (e.keyCode === 8) { // Backspace
+                            e.preventDefault();
+                            rawValue = rawValue.slice(0, -1);
+                            updateDisplay(input, rawValue);
+                        }
+                        return;
                     }
                     
-                    if (value.length === 0) {
+                    // Only allow numbers
+                    if ((e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
+                        e.preventDefault();
+                        return;
+                    }
+                    
+                    e.preventDefault();
+                    
+                    // Get the digit
+                    let digit;
+                    if (e.keyCode >= 96 && e.keyCode <= 105) {
+                        digit = (e.keyCode - 96).toString();
+                    } else {
+                        digit = (e.keyCode - 48).toString();
+                    }
+                    
+                    // Add digit if under limit
+                    if (rawValue.length < 5) {
+                        rawValue += digit;
+                        updateDisplay(input, rawValue);
+                    }
+                });
+                
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                    const digits = pastedText.replace(/[^0-9]/g, '');
+                    rawValue = digits.slice(-5); // Take last 5 digits
+                    updateDisplay(input, rawValue);
+                });
+                
+                input.addEventListener('focus', function(e) {
+                    if (e.target.value === '00:00,000') {
+                        rawValue = '';
                         e.target.value = '';
+                    } else {
+                        rawValue = e.target.value.replace(/[^0-9]/g, '');
+                    }
+                });
+                
+                function updateDisplay(input, raw) {
+                    if (raw.length === 0) {
+                        input.value = '';
                         return;
                     }
                     
                     // Pad with zeros on the left
-                    value = value.padStart(5, '0');
+                    const padded = raw.padStart(5, '0');
                     
                     // Format as mm:ss,mmm
-                    const formatted = value.slice(0, 2) + ':' + value.slice(2, 4) + ',' + value.slice(4);
-                    
-                    e.target.value = formatted;
-                    
-                    // Keep cursor at end
-                    e.target.setSelectionRange(formatted.length, formatted.length);
-                });
-                
-                input.addEventListener('keydown', function(e) {
-                    // Allow: backspace, delete, tab, escape, enter
-                    if ([8, 9, 27, 13, 46].includes(e.keyCode) ||
-                        // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-                        (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
-                        (e.keyCode === 67 && (e.ctrlKey === true || e.metaKey === true)) ||
-                        (e.keyCode === 86 && (e.ctrlKey === true || e.metaKey === true)) ||
-                        (e.keyCode === 88 && (e.ctrlKey === true || e.metaKey === true)) ||
-                        // Allow: home, end, left, right, up, down
-                        (e.keyCode >= 35 && e.keyCode <= 40)) {
-                        return;
-                    }
-                    
-                    // Get current digits only
-                    const currentDigits = e.target.value.replace(/[^0-9]/g, '');
-                    
-                    // If already at 5 digits, prevent more input
-                    if (currentDigits.length >= 5 && !e.ctrlKey && !e.metaKey && e.keyCode !== 8 && e.keyCode !== 46) {
-                        e.preventDefault();
-                        return;
-                    }
-                    
-                    // Ensure that it's a number and stop if not
-                    if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
-                        e.preventDefault();
-                    }
-                });
-                
-                // Clear to empty on focus if it's the placeholder
-                input.addEventListener('focus', function(e) {
-                    if (e.target.value === '00:00,000') {
-                        e.target.value = '';
-                    }
-                });
+                    const formatted = padded.slice(0, 2) + ':' + padded.slice(2, 4) + ',' + padded.slice(4);
+                    input.value = formatted;
+                }
             });
         }
 
