@@ -280,182 +280,225 @@
             transform: rotate(180deg);
         }
 
-        /* Mobile devices (320px - 480px) */
-        @media screen and (max-width: 480px) {
-            header h1 {
-                font-size: 1.8em;
-            }
+/* ------------------------------ */
+/* 📱 Mobile devices (320px - 480px) */
+/* ------------------------------ */
+@media screen and (max-width: 480px) {
+    header h1 {
+        font-size: 1.8em;
+    }
 
-            header p {
-                font-size: 0.9em;
-            }
+    header p {
+        font-size: 0.9em;
+    }
 
-            .tab-content {
-                padding: 15px;
-            }
+    .tab-content {
+        padding: 15px;
+    }
 
-            .tab-button {
-                min-width: 100%;
-                padding: 12px 15px;
-                font-size: 0.95em;
-            }
+    .tab-button {
+        min-width: 100%;
+        padding: 12px 15px;
+        font-size: 0.95em;
+    }
 
-            .stats-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
 
-            .stat-card {
-                padding: 15px;
-            }
+    .stat-card {
+        padding: 15px;
+    }
 
-            .stat-card h3 {
-                font-size: 2em;
-            }
+    .stat-card h3 {
+        font-size: 2em;
+    }
 
-            /* Better mobile table cards with compact layout */
-            .leaderboard-table thead {
-                display: none !important;
-            }
+    /* Better mobile table cards with compact layout */
+    .leaderboard-table thead {
+        display: none !important;
+    }
 
-            .leaderboard-table,
-            .leaderboard-table tbody,
-            .leaderboard-table tr {
-                display: block;
-                width: 100%;
-            }
+    .leaderboard-table,
+    .leaderboard-table tbody,
+    .leaderboard-table tr {
+        display: block;
+        width: 100%;
+    }
 
-            .leaderboard-table tr {
-                margin-bottom: 12px;
-                border: 2px solid #e0e0e0;
-                border-radius: 10px;
-                padding: 12px;
-                background: white;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            }
+    .leaderboard-table tr {
+        margin-bottom: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 12px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
 
-            .leaderboard-table td {
-                display: grid;
-                grid-template-columns: 110px 1fr;
-                padding: 8px 0;
-                border: none;
-                text-align: left;
-                gap: 12px;
-                align-items: center;
-            }
+    .leaderboard-table td {
+        display: grid;
+        grid-template-columns: 110px 1fr;
+        padding: 8px 0;
+        border: none;
+        text-align: left;
+        gap: 12px;
+        align-items: center;
+    }
 
-            .leaderboard-table td:before {
-                content: attr(data-label);
-                font-weight: 600;
-                color: #667eea;
-                text-align: left;
-                font-size: 0.9em;
-            }
+    .leaderboard-table td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #667eea;
+        text-align: left;
+        font-size: 0.9em;
+    }
 
-            .leaderboard-table td:not(:last-child) {
-                border-bottom: 1px solid #f0f0f0;
-            }
+    .leaderboard-table td:not(:last-child) {
+        border-bottom: 1px solid #f0f0f0;
+    }
 
-            /* Driver cards mobile */
-            .driver-card {
-                padding: 20px;
-            }
+    /* Driver cards mobile */
+    .driver-card {
+        padding: 20px;
+    }
 
-            .driver-header {
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
-                gap: 15px;
-            }
+    .driver-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 15px;
+    }
 
-            .driver-photo {
-                width: 100px !important;
-                height: 100px !important;
-            }
+    .driver-photo {
+        width: 100px !important;
+        height: 100px !important;
+    }
 
-            .driver-number-badge {
-                width: 40px !important;
-                height: 40px !important;
-                font-size: 1.2em !important;
-            }
+    .driver-number-badge {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 1.2em !important;
+    }
 
-            .driver-info h2 {
-                font-size: 1.5em;
-            }
+    .driver-info h2 {
+        font-size: 1.5em;
+    }
 
-            .stats-grid-driver {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
-            }
+    .stats-grid-driver {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
 
-            .stat-card-driver {
-                padding: 15px;
-            }
+    .stat-card-driver {
+        padding: 15px;
+    }
 
-            .stat-card-driver .stat-value {
-                font-size: 2em;
-            }
+    .stat-card-driver .stat-value {
+        font-size: 2em;
+    }
 
-            .round-header {
-                padding: 12px;
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
-            }
+    .round-header {
+        padding: 12px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
 
-            .round-summary {
-                font-size: 0.8em;
-                word-break: break-word;
-            }
+    .round-summary {
+        font-size: 0.8em;
+        word-break: break-word;
+    }
 
-            .round-banner-icons {
-                display: none !important;
-            }
+    .round-banner-icons {
+        display: none !important;
+    }
 
-            .container {
-                padding: 10px;
-            }
+    .container {
+        padding: 10px;
+    }
 
-            header {
-                padding: 20px 10px;
-                margin-bottom: 15px;
-            }
+    header {
+        padding: 20px 10px;
+        margin-bottom: 15px;
+    }
 
-            .form-container iframe {
-                height: 600px;
-            }
+    .form-container iframe {
+        height: 600px;
+    }
 
-            /* Keep original mobile profile layout (horizontal) */
-            #userInfo {
-                padding: 10px 12px !important;
-            }
+    /* ------------------------------ */
+    /* 👤 Centered full-width profile section */
+    /* ------------------------------ */
+    #userInfo {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        text-align: center !important;
+        padding: 16px !important;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+        box-sizing: border-box;
+    }
 
-            #userPhotoContainer {
-                flex-shrink: 0;
-            }
+    #userPhotoContainer {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        margin-bottom: 12px !important;
+    }
 
-            #userPhotoContainer img {
-                width: 45px !important;
-                height: 45px !important;
-            }
+    #userPhotoContainer img {
+        width: 70px !important;
+        height: 70px !important;
+        border: 3px solid white !important;
+        border-radius: 50% !important;
+        object-fit: cover !important;
+    }
 
-            #userNumberBadge {
-                width: 22px !important;
-                height: 22px !important;
-                font-size: 0.7em !important;
-                bottom: -3px !important;
-                right: -3px !important;
-            }
+    #userNumberBadge {
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 0.8em !important;
+        bottom: -4px !important;
+        right: -4px !important;
+    }
 
-            #userName {
-                font-size: 0.95em !important;
-            }
+    #userName {
+        font-size: 1.1em !important;
+        font-weight: 600 !important;
+        color: #fff !important;
+        margin-bottom: 12px !important;
+    }
 
-            #userInfo button {
-                font-size: 0.8em !important;
-                padding: 6px 12px !important;
-            }
-        }
+    /* Stack and center buttons */
+    #userInfo > div > div:last-child > div {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+        width: 100% !important;
+        align-items: center !important;
+    }
+
+    #userInfo button {
+        font-size: 1em !important;
+        padding: 12px 20px !important;
+        width: 90% !important;
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        text-align: center !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        transition: transform 0.15s ease, background 0.2s ease;
+    }
+
+    #userInfo button:active {
+        transform: scale(0.97);
+    }
+}
+
 
         /* Small tablets (481px - 768px) */
         @media screen and (min-width: 481px) and (max-width: 768px) {
