@@ -1671,7 +1671,7 @@ async function goToDriverCurrentRound(driverName) {
                 
                 tr.innerHTML = `
                     <td data-label="Position"><span class="medal">${medal}</span>${row.position}</td>
-                    <td data-label="Driver"><strong>${formattedName}</strong></td>
+                    el="Driver"><strong style="cursor: pointer; color: #667eea;" class="driver-link" data-driver="${row.driver}">${formattedName}</strong></td>
                     <td data-label="Points"><strong>${row.points}</strong></td>
                     <td data-label="Purple Sectors">${row.purpleSectors}</td>
                     <td data-label="Wins">${row.wins}</td>
@@ -1883,7 +1883,7 @@ async function goToDriverCurrentRound(driverName) {
                     const formattedName = getFormattedDriverName(row.driver);
                     
                     tr.innerHTML = `
-                        <td data-label="Driver"><strong>${formattedName}</strong></td>
+                        <td data-label="Driver"><strong style="cursor: pointer; color: #667eea;" class="driver-link-round" data-driver="${row.driver}">${formattedName}</strong></td>
                         <td data-label="Sector 1">${formatTime(row.sector1)}</td>
                         <td data-label="Sector 2">${formatTime(row.sector2)}</td>
                         <td data-label="Sector 3">${formatTime(row.sector3)}</td>
@@ -2562,17 +2562,22 @@ async function goToDriverCurrentRound(driverName) {
                 });
             }
 
+            // Mobile click handler for entire rows
             if (window.innerWidth <= 480) {
-                document.getElementById('leaderboard-body').addEventListener('click', function(e) {
-                    const row = e.target.closest('tr');
-                    if (row) {
-                        const driverLink = row.querySelector('.driver-link');
-                        if (driverLink) {
-                            const driverName = driverLink.getAttribute('data-driver');
-                            goToDriverCurrentRound(driverName);
+                // Use event delegation on the tbody
+                const leaderboardBody = document.getElementById('leaderboard-body');
+                if (leaderboardBody) {
+                    leaderboardBody.addEventListener('click', function(e) {
+                        const row = e.target.closest('tr');
+                        if (row) {
+                            const driverLink = row.querySelector('.driver-link');
+                            if (driverLink) {
+                                const driverName = driverLink.getAttribute('data-driver');
+                                goToDriverCurrentRound(driverName);
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }
         });
 
