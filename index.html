@@ -271,6 +271,10 @@
             background: #fff;
         }
 
+        .season-number::before {
+            content: "Season ";
+        }
+
         .toggle-icon {
             font-size: 1.2em;
             transition: transform 0.3s ease;
@@ -3125,7 +3129,7 @@
                     card.innerHTML = `
                         <div class="round-card-header">
                             <h3>Round ${setup.round}</h3>
-                            <p style="margin: 5px 0 0 0; opacity: 0.9;">${setup.season}</p>
+                            <p class="season-number" style="margin: 5px 0 0 0; opacity: 0.9;">${setup.season}</p>
                         </div>
                         
                         <div class="round-card-images">
