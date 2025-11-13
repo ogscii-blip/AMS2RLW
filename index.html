@@ -1811,15 +1811,16 @@ async function goToDriverCurrentRound(driverName) {
             const container = document.getElementById('round-content');
             container.innerHTML = '';
 
-            // Make round driver names clickable
-            document.querySelectorAll('.driver-link-round').forEach(link => {
-                link.addEventListener('click', () => {
-                    const driver = link.getAttribute('data-driver');
-                    goToDriverProfile(driver);
-                });
-            });
+                                                // Make round driver names clickable → Driver profile card
+                                                document.querySelectorAll('.driver-link-round').forEach(link => {
+                                                    link.addEventListener('click', () => {
+                                                        const driver = link.getAttribute('data-driver');
+                                                        goToDriverProfile(driver);
+                                                    });
+                                                });
 
-            
+
+
             // Fallback images
             const fallbackTrackImage = 'https://static.vecteezy.com/system/resources/previews/015/114/628/non_2x/race-track-icon-isometric-road-circuit-vector.jpg';
             const fallbackCarImage = 'https://thumb.silhouette-ac.com/t/e9/e9f1eb16ae292f36be10def00d95ecbb_t.jpeg';
@@ -3244,6 +3245,15 @@ async function goToDriverCurrentRound(driverName) {
         function displayRoundCards(setupData, roundData, tracksMap, carsMap) {
             const container = document.getElementById('round-cards-grid');
             container.innerHTML = '';
+
+                                            // Make round driver names clickable → Driver profile card
+                                            document.querySelectorAll('.driver-link-round').forEach(link => {
+                                                link.addEventListener('click', () => {
+                                                    const driver = link.getAttribute('data-driver');
+                                                    goToDriverProfile(driver);
+                                                });
+                                            });
+
             
             // Fallback images
             const fallbackTrackImage = 'https://static.vecteezy.com/system/resources/previews/015/114/628/non_2x/race-track-icon-isometric-road-circuit-vector.jpg';
