@@ -1443,49 +1443,101 @@
     </div>
 
     <script>
-        // Tab switching functionality
-        function showTab(tabName) {
-            // Hide all tabs
-            const tabs = document.querySelectorAll('.tab-content');
-            tabs.forEach(tab => tab.classList.remove('active'));
-            
-            // Remove active class from all buttons
-            const buttons = document.querySelectorAll('.tab-button');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            
-            // Show selected tab
-            document.getElementById(tabName).classList.add('active');
-            
-            // Add active class to clicked button
-            event.target.classList.add('active');
-            
-            // Load data if needed
-            if (tabName === 'overall') {
-                loadLeaderboard();
-            } else if (tabName === 'round') {
-                loadRoundData();
-            } else if (tabName === 'drivers') {
-                loadDriverStats();
-            } else if (tabName === 'profile') {
-                loadProfile();
-            } else if (tabName === 'setup') {
-                loadRoundSetup();
-            }
+        // ===== ENHANCED CACHE BUSTING =====
+        function getCacheBuster() {
+            return `${new Date().getTime()}_${Math.random().toString(36).substr(2, 9)}`;
         }
 
+        async function fetchWithNoCache(url) {
+            const cacheBuster = getCacheBuster();
+            const separator = url.includes('?') ? '&' : '?';
+            const fullUrl = `${url}${separator}cacheBust=${cacheBuster}`;
+            
+            return await fetch(fullUrl, {
+                method: 'GET',
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                }
+            });
+        }
+
+        function updateLastRefreshTime(elementId = 'lastUpdate') {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            const dateString = now.toLocaleDateString();
+            
+            let timestampEl = document.getElementById(elementId);
+            if (!timestampEl) {
+                timestampEl = document.createElement('div');
+                timestampEl.id = elementId;
+                timestampEl.style.cssText = 'text-align: center; padding: 10px; color: #666; font-size: 0.9em; font-style: italic; margin-top: 10px;';
+                
+                const leaderboardContent = document.getElementById('leaderboard-content');
+                if (leaderboardContent && leaderboardContent.parentNode) {
+                    leaderboardContent.parentNode.insertBefore(timestampEl, leaderboardContent.nextSibling);
+                }
+            }
+            
+            timestampEl.textContent = `📊 Data last refreshed: ${timeString} on ${dateString}`;
+        }
+
+        // Tab switching functionality
+	
+	//<script>
+        // Tab switching functionality
+        //function showTab(tabName) {
+            // Hide all tabs
+        //    const tabs = document.querySelectorAll('.tab-content');
+        //    tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Remove active class from all buttons
+        //    const buttons = document.querySelectorAll('.tab-button');
+        //    buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Show selected tab
+        //    document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked button
+        //    event.target.classList.add('active');
+            
+            // Load data if needed
+        //    if (tabName === 'overall') {
+        //        loadLeaderboard();
+        //    } else if (tabName === 'round') {
+        //        loadRoundData();
+        //    } else if (tabName === 'drivers') {
+        //        loadDriverStats();
+        //  } else if (tabName === 'profile') {
+        //        loadProfile();
+        //    } else if (tabName === 'setup') {
+        //        loadRoundSetup();
+        //    }
+        //}
+		
+		
+		
         // Load leaderboard data from Google Sheets
-        async function loadLeaderboard() {
+        //async function loadLeaderboard() {
     // Add cache-busting parameter to force fresh data
-    const timestamp = new Date().getTime();
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=0&single=true&output=csv&t=${timestamp}`;
+    //const timestamp = new Date().getTime();
+    //const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=0&single=true&output=csv&t=${timestamp}`;
+    
+    //try {
+    //    const response = await fetch(sheetUrl, {
+    //        cache: 'no-store',
+    //        headers: {
+    //            'Cache-Control': 'no-cache'
+    //        }
+    //    });
+	
+	async function loadLeaderboard() {
+    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=0&single=true&output=csv';
     
     try {
-        const response = await fetch(sheetUrl, {
-            cache: 'no-store',
-            headers: {
-                'Cache-Control': 'no-cache'
-            }
-        });
+        const response = await fetchWithNoCache(sheetUrl);
         const csvText = await response.text();
         
         // Parse CSV
@@ -1515,6 +1567,8 @@
         
         // Load round data to get rounds count
         loadRoundsCount();
+		// Update last refresh time
+        updateLastRefreshTime();
     } catch (error) {
         console.error('Error loading leaderboard:', error);
     }
@@ -1545,17 +1599,22 @@
             return driverLoginName;
         }
 
-        async function loadRoundsCount() {
-            const timestamp = new Date().getTime();
-            const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
+        //async function loadRoundsCount() {
+        //    const timestamp = new Date().getTime();
+        //    const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
             
-            try {
-                const response = await fetch(sheetUrl, {
-                    cache: 'no-store',
-                    headers: {
-                        'Cache-Control': 'no-cache'
-                    }
-                });
+        //    try {
+        //        const response = await fetch(sheetUrl, {
+        //            cache: 'no-store',
+        //            headers: {
+        //                'Cache-Control': 'no-cache'
+        //            }
+        //        });
+		async function loadRoundsCount() {
+			const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv';
+    
+			try {
+				const response = await fetchWithNoCache(sheetUrl);
                 const csvText = await response.text();
                 const rows = csvText.split('\n').slice(1);
                 const allData = rows
@@ -1600,19 +1659,29 @@
             document.getElementById('leaderboard-content').style.display = 'block';
         }
 
-        async function loadRoundData() {
-    const timestamp = new Date().getTime();
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
-    const tracksUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=1346258272&single=true&output=csv';
-    const carsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=208034687&single=true&output=csv';
+    //    async function loadRoundData() {
+    //const timestamp = new Date().getTime();
+    //const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
+    //const tracksUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=1346258272&single=true&output=csv';
+    //const carsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=208034687&single=true&output=csv';
     
-    try {
-        const [dataResponse, tracksResponse, carsResponse] = await Promise.all([
-            fetch(sheetUrl, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } }),
-            fetch(tracksUrl, { cache: 'no-store' }),
-            fetch(carsUrl, { cache: 'no-store' })
-        ]);
-        
+    //try {
+    //    const [dataResponse, tracksResponse, carsResponse] = await Promise.all([
+    //        fetch(sheetUrl, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } }),
+    //        fetch(tracksUrl, { cache: 'no-store' }),
+    //        fetch(carsUrl, { cache: 'no-store' })
+    //    ]);
+     async function loadRoundData() {
+		const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv';
+		const tracksUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=1346258272&single=true&output=csv';
+		const carsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=208034687&single=true&output=csv';
+    
+		try {
+			const [dataResponse, tracksResponse, carsResponse] = await Promise.all([
+				fetchWithNoCache(sheetUrl),
+				fetchWithNoCache(tracksUrl),
+				fetchWithNoCache(carsUrl)
+			]);   
         const [csvText, tracksCSV, carsCSV] = await Promise.all([
             dataResponse.text(),
             tracksResponse.text(),
@@ -1815,17 +1884,25 @@
         }
 
         // Load driver statistics
-        async function loadDriverStats() {
-            const timestamp = new Date().getTime();
-            const roundDataUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
-            const leaderboardUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=0&single=true&output=csv&t=${timestamp}`;
+        //async function loadDriverStats() {
+        //    const timestamp = new Date().getTime();
+        //    const roundDataUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
+        //    const leaderboardUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=0&single=true&output=csv&t=${timestamp}`;
             
-            try {
-                const [roundDataResponse, leaderboardResponse] = await Promise.all([
-                    fetch(roundDataUrl, { cache: 'no-store' }),
-                    fetch(leaderboardUrl, { cache: 'no-store' })
-                ]);
-                
+        //    try {
+        //        const [roundDataResponse, leaderboardResponse] = await Promise.all([
+        //            fetch(roundDataUrl, { cache: 'no-store' }),
+        //            fetch(leaderboardUrl, { cache: 'no-store' })
+        //        ]);
+        async function loadDriverStats() {
+			const roundDataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv';
+			const leaderboardUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=0&single=true&output=csv';
+    
+			try {
+				const [roundDataResponse, leaderboardResponse] = await Promise.all([
+					fetchWithNoCache(roundDataUrl),
+					fetchWithNoCache(leaderboardUrl)
+				]);        
                 const [roundDataCSV, leaderboardCSV] = await Promise.all([
                     roundDataResponse.text(),
                     leaderboardResponse.text()
@@ -2968,22 +3045,35 @@
         });
 
         // Load Round Setup configurations with best times
-        async function loadRoundSetupWithBestTimes() {
-            const timestamp = new Date().getTime();
-            const setupUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=734685847&single=true&output=csv&t=${timestamp}`;
-            const roundDataUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
-            const tracksUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=1346258272&single=true&output=csv';
-            const carsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=208034687&single=true&output=csv';
+        //async function loadRoundSetupWithBestTimes() {
+        //    const timestamp = new Date().getTime();
+        //    const setupUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=734685847&single=true&output=csv&t=${timestamp}`;
+        //    const roundDataUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
+        //   const tracksUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=1346258272&single=true&output=csv';
+        //    const carsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=208034687&single=true&output=csv';
             
-            try {
+        //    try {
                 // Load all data in parallel
-                const [setupResponse, roundDataResponse, tracksResponse, carsResponse] = await Promise.all([
-                    fetch(setupUrl, { cache: 'no-store' }),
-                    fetch(roundDataUrl, { cache: 'no-store' }),
-                    fetch(tracksUrl, { cache: 'no-store' }),
-                    fetch(carsUrl, { cache: 'no-store' })
-                ]);
-                
+        //        const [setupResponse, roundDataResponse, tracksResponse, carsResponse] = await Promise.all([
+        //            fetch(setupUrl, { cache: 'no-store' }),
+        //            fetch(roundDataUrl, { cache: 'no-store' }),
+        //            fetch(tracksUrl, { cache: 'no-store' }),
+        //            fetch(carsUrl, { cache: 'no-store' })
+        //        ]);
+        async function loadRoundSetupWithBestTimes() {
+			const setupUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=734685847&single=true&output=csv';
+			const roundDataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv';
+			const tracksUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=1346258272&single=true&output=csv';
+			const carsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=208034687&single=true&output=csv';
+    
+			try {
+				// Load all data in parallel
+				const [setupResponse, roundDataResponse, tracksResponse, carsResponse] = await Promise.all([
+					fetchWithNoCache(setupUrl),
+					fetchWithNoCache(roundDataUrl),
+					fetchWithNoCache(tracksUrl),
+					fetchWithNoCache(carsUrl)
+				]);        
                 const [setupCSV, roundDataCSV, tracksCSV, carsCSV] = await Promise.all([
                     setupResponse.text(),
                     roundDataResponse.text(),
