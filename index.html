@@ -665,13 +665,13 @@
             }
         }
 
-        /* Responsive Time Inputs - Desktop single input, Mobile split inputs */
+        /* Time Inputs - Split inputs for all screen sizes */
         .time-input-desktop {
-            display: block;
+            display: none;
         }
 
         .time-input-mobile {
-            display: none;
+            display: block;
         }
 
         .time-input-split-container {
@@ -703,17 +703,6 @@
             font-size: 20px;
             font-weight: bold;
             color: #666;
-        }
-
-        /* Switch to split inputs on mobile */
-        @media screen and (max-width: 768px) {
-            .time-input-desktop {
-                display: none;
-            }
-            
-            .time-input-mobile {
-                display: block;
-            }
         }
 
         /* Round cards styling */
@@ -1004,7 +993,7 @@
         <header>
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; padding: 0 20px;">
                 <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px;">
-                    <img src="https://github.com/ogscii-blip/AMS2RLW/blob/main/AMS2_Logo2.png?raw=true" alt="Automobilista 2" style="max-width: 400px; width: 100%; height: auto;" id="desktopLogo">
+                    <img src="https://github.com/ogscii-blip/AMS2RLW/blob/main/AMS2_Logo2.png?raw=true" alt="Automobilista 2" style="max-width: 800px; width: 100%; height: auto;" id="desktopLogo">
                     <img src="https://images.launchbox-app.com/a8e90521-473b-480d-aa73-c2870aa75ea3.jpg" alt="AMS2" style="max-width: 120px; width: 100%; height: auto; display: none;" id="mobileLogo">
                     <p style="margin: 0; font-size: 1.2em; font-weight: 600; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);" id="subtitle">ABO AMS2 Racing League</p>
                 </div>
@@ -2453,76 +2442,14 @@
             updateSubmitTabVisibility();
         });
 
-        // Setup sector time input masking (responsive: desktop single input, mobile split inputs)
+        // Setup sector time input handling (split inputs for all screen sizes)
         function setupSectorTimeInputs() {
             const sectorInputs = ['sector1', 'sector2', 'sector3'];
             
             sectorInputs.forEach(inputId => {
-                const desktopInput = document.getElementById(inputId);
                 const secInput = document.getElementById(`${inputId}-sec`);
                 const msInput = document.getElementById(`${inputId}-ms`);
                 
-                // DESKTOP INPUT HANDLING (existing logic)
-                if (desktopInput) {
-                    let lastFormattedValue = '';
-                    
-                    desktopInput.addEventListener('input', function(e) {
-                        // Get current value and strip all non-digits
-                        let value = e.target.value.replace(/[^0-9]/g, '');
-                        
-                        // Limit to 7 digits
-                        if (value.length > 7) {
-                            value = value.slice(0, 7);
-                        }
-                        
-                        // Format and update immediately
-                        if (value.length === 0) {
-                            e.target.value = '';
-                            lastFormattedValue = '';
-                        } else {
-                            // Pad to 7 digits
-                            const padded = value.padStart(7, '0');
-                            
-                            // Format as mm:ss,mmm
-                            const formatted = padded.slice(0, 2) + ':' + padded.slice(2, 4) + ',' + padded.slice(4, 7);
-                            e.target.value = formatted;
-                            lastFormattedValue = formatted;
-                        }
-                    });
-                    
-                    // Handle blur to ensure formatting
-                    desktopInput.addEventListener('blur', function(e) {
-                        const value = e.target.value.replace(/[^0-9]/g, '');
-                        if (value.length > 0) {
-                            const padded = value.padStart(7, '0');
-                            const formatted = padded.slice(0, 2) + ':' + padded.slice(2, 4) + ',' + padded.slice(4, 7);
-                            e.target.value = formatted;
-                        }
-                    });
-                    
-                    // Handle focus - select all for easy replacement
-                    desktopInput.addEventListener('focus', function(e) {
-                        // Small delay to let mobile keyboard appear
-                        setTimeout(() => {
-                            e.target.select();
-                        }, 100);
-                    });
-                    
-                    desktopInput.addEventListener('paste', function(e) {
-                        e.preventDefault();
-                        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-                        const digits = pastedText.replace(/[^0-9]/g, '');
-                        
-                        if (digits.length > 0) {
-                            const value = digits.slice(0, 7);
-                            const padded = value.padStart(7, '0');
-                            const formatted = padded.slice(0, 2) + ':' + padded.slice(2, 4) + ',' + padded.slice(4, 7);
-                            e.target.value = formatted;
-                        }
-                    });
-                }
-                
-                // MOBILE SPLIT INPUTS HANDLING
                 if (secInput && msInput) {
                     // Only allow numbers
                     [secInput, msInput].forEach(input => {
@@ -2753,42 +2680,34 @@
         });
 
         // Handle Lap Time form submission
-        // Helper function to get time value from responsive inputs (desktop or mobile)
+        // Helper function to get time value from split inputs
         function getSectorTimeValue(sectorId) {
-            const isMobile = window.innerWidth <= 768;
+            // Get from split inputs
+            const secInput = document.getElementById(`${sectorId}-sec`);
+            const msInput = document.getElementById(`${sectorId}-ms`);
             
-            if (isMobile) {
-                // Get from mobile split inputs
-                const secInput = document.getElementById(`${sectorId}-sec`);
-                const msInput = document.getElementById(`${sectorId}-ms`);
-                
-                if (!secInput || !msInput) {
-                    return ''; // Return empty if inputs don't exist
-                }
-                
-                const seconds = secInput.value || '';
-                const milliseconds = msInput.value || '';
-                
-                // Validate that both fields have values
-                if (seconds === '' || milliseconds === '') {
-                    return ''; // Return empty if incomplete
-                }
-                
-                // Pad values
-                const paddedSeconds = seconds.padStart(2, '0');
-                const paddedMilliseconds = milliseconds.padStart(3, '0');
-                
-                // Convert SS.mmm to mm:ss,mmm format
-                const totalSeconds = parseInt(paddedSeconds);
-                const minutes = Math.floor(totalSeconds / 60);
-                const remainingSeconds = totalSeconds % 60;
-                
-                return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')},${paddedMilliseconds}`;
-            } else {
-                // Get from desktop single input (already formatted as mm:ss,mmm)
-                const input = document.getElementById(sectorId);
-                return input ? input.value : '';
+            if (!secInput || !msInput) {
+                return ''; // Return empty if inputs don't exist
             }
+            
+            const seconds = secInput.value || '';
+            const milliseconds = msInput.value || '';
+            
+            // Validate that both fields have values
+            if (seconds === '' || milliseconds === '') {
+                return ''; // Return empty if incomplete
+            }
+            
+            // Pad values
+            const paddedSeconds = seconds.padStart(2, '0');
+            const paddedMilliseconds = milliseconds.padStart(3, '0');
+            
+            // Convert SS.mmm to mm:ss,mmm format
+            const totalSeconds = parseInt(paddedSeconds);
+            const minutes = Math.floor(totalSeconds / 60);
+            const remainingSeconds = totalSeconds % 60;
+            
+            return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')},${paddedMilliseconds}`;
         }
 
         document.getElementById('lapTimeForm').addEventListener('submit', async function(e) {
@@ -2811,15 +2730,12 @@
             
             const messageDiv = document.getElementById('lapTimeMessage');
             
-            console.log('Form submission - Values:', { sector1, sector2, sector3, isMobile: window.innerWidth <= 768 });
-            
             // Check if any time is empty
             if (!sector1 || !sector2 || !sector3) {
                 messageDiv.style.display = 'block';
                 messageDiv.style.background = '#f8d7da';
                 messageDiv.style.color = '#721c24';
                 messageDiv.textContent = '❌ Please fill in all sector times.';
-                console.log('Validation failed: empty fields');
                 return;
             }
             
@@ -2830,7 +2746,6 @@
                 messageDiv.style.background = '#f8d7da';
                 messageDiv.style.color = '#721c24';
                 messageDiv.textContent = '❌ Invalid time format. Please ensure all sectors are filled in correctly.';
-                console.log('Validation failed: format check', { sector1, sector2, sector3 });
                 return;
             }
             
