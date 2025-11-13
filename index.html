@@ -1208,6 +1208,13 @@
 
                 <div style="background: #fff; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
                     <form id="roundSetupForm" style="display: flex; flex-direction: column; gap: 20px;">
+                         <div>
+                            <label for="season" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Season:</label>
+                            <input type="text" id="season" name="season" required placeholder="e.g., Season 1" 
+                                   style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                        </div>
+
+                        
                         <div>
                             <label for="roundNumber" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Round Number:</label>
                             <input type="number" id="roundNumber" name="roundNumber" required min="1" 
@@ -1229,13 +1236,7 @@
                                 <option value="">Loading cars...</option>
                             </select>
                         </div>
-
-                        <div>
-                            <label for="season" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Season:</label>
-                            <input type="text" id="season" name="season" required placeholder="e.g., Season 1" 
-                                   style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
-                        </div>
-
+                        
                         <button type="submit" class="refresh-btn" style="width: 100%; padding: 15px; font-size: 1.1em; margin: 0;">
                             ✅ Submit Round Setup
                         </button>
