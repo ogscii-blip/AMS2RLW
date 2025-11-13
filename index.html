@@ -1493,52 +1493,58 @@
 
         // Navigate to Round Results tab and expand the driver's latest round
 async function goToDriverCurrentRound(driverName) {
-    // Switch to Round tab
+    // Switch to Round Results tab
     showTab('round');
 
-    // Load the round data fully first
-    await loadRoundData();
+    // Wait for the DOM to actually update
+    await new Promise(resolve => setTimeout(resolve, 300));
 
-    // Small delay for the DOM to render
-    setTimeout(async () => {
-        const timestamp = Date.now();
-        const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
+    // Ensure round data is rendered (your existing loader)
+    if (typeof loadRoundData === "function") {
+        await loadRoundData();
+    }
 
-        try {
-            const response = await fetch(sheetUrl, { cache: "no-store" });
-            const csv = await response.text();
-            const rows = csv.split("\n").slice(1);
+    // Allow DOM to finish constructing the round groups
+    await new Promise(resolve => setTimeout(resolve, 300));
 
-            // Find rows belonging to this driver
-            const driverRounds = rows
-                .map(r => r.split(','))
-                .filter(c => c[1] === driverName)
-                .map(c => c[0]);
+    // Determine the highest-numbered (latest) round on the page
+    const allRounds = [...document.querySelectorAll('[id^="details-"]')]
+        .map(e => parseInt(e.id.replace("details-", ""), 10))
+        .filter(n => !isNaN(n));
 
-            if (driverRounds.length === 0) return;
+    if (allRounds.length === 0) {
+        console.warn("No rounds found in DOM.");
+        return;
+    }
 
-            // Get highest round number
-            const latestRound = driverRounds.reduce((max, r) => {
-                const n = parseInt(r.replace(/\D/g, "")) || 0;
-                return n > max ? n : max;
-            }, 0);
+    const latestRound = Math.max(...allRounds);
 
-            const roundId = latestRound.toString();
+    const details = document.getElementById(`details-${latestRound}`);
+    const icon = document.getElementById(`toggle-${latestRound}`);
 
-            const details = document.getElementById(`details-${roundId}`);
-            const icon = document.getElementById(`toggle-${roundId}`);
+    if (!details) {
+        console.warn("Could not find latest round DOM element.");
+        return;
+    }
 
-            if (details && icon) {
-                details.classList.add("expanded");
-                icon.classList.add("expanded");
+    // Expand it
+    details.classList.add("expanded");
+    if (icon) icon.classList.add("expanded");
 
-                details.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
-        } catch (e) {
-            console.error("Could not expand driver round:", e);
-        }
-    }, 400);
+    // Scroll into view smoothly
+    details.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+
+    // Optional highlight flash
+    details.style.transition = "background 0.4s ease";
+    details.style.background = "#fffa9c";
+    setTimeout(() => {
+        details.style.background = "";
+    }, 700);
 }
+
         
         // Load leaderboard data from Google Sheets
         async function loadLeaderboard() {
