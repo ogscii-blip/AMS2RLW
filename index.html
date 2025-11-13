@@ -1493,68 +1493,52 @@
 
         // Navigate to Round Results tab and expand the driver's latest round
 async function goToDriverCurrentRound(driverName) {
-    // First, switch to Round Results tab
+    // Switch to Round tab
     showTab('round');
-    
-    // Highlight the Round Results tab button
-    const buttons = document.querySelectorAll('.tab-button');
-    buttons.forEach(btn => btn.classList.remove('active'));
-    buttons[1].classList.add('active'); // Round Results is the 2nd button (index 1)
-    
-    // Wait a moment for the round data to load
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Find the driver's most recent round
-    const timestamp = new Date().getTime();
-    const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
-    
-    try {
-        const response = await fetch(sheetUrl, {
-            cache: 'no-store',
-            headers: {
-                'Cache-Control': 'no-cache'
-            }
-        });
-        const csvText = await response.text();
-        
-        // Parse CSV
-        const rows = csvText.split('\n').slice(1);
-        const driverRounds = rows
-            .filter(row => row.trim())
-            .map(row => {
-                const cols = row.split(',');
-                return {
-                    round: cols[0],
-                    driver: cols[1]
-                };
-            })
-            .filter(row => row.driver === driverName);
-        
-        if (driverRounds.length > 0) {
-            // Get the latest round (assuming higher round number = more recent)
-            const latestRound = driverRounds.reduce((max, current) => {
-                const currentNum = parseInt(current.round.replace(/\D/g, '')) || 0;
-                const maxNum = parseInt(max.round.replace(/\D/g, '')) || 0;
-                return currentNum > maxNum ? current : max;
-            });
-            
-            // Expand that round
-            const roundId = latestRound.round;
+
+    // Load the round data fully first
+    await loadRoundData();
+
+    // Small delay for the DOM to render
+    setTimeout(async () => {
+        const timestamp = Date.now();
+        const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
+
+        try {
+            const response = await fetch(sheetUrl, { cache: "no-store" });
+            const csv = await response.text();
+            const rows = csv.split("\n").slice(1);
+
+            // Find rows belonging to this driver
+            const driverRounds = rows
+                .map(r => r.split(','))
+                .filter(c => c[1] === driverName)
+                .map(c => c[0]);
+
+            if (driverRounds.length === 0) return;
+
+            // Get highest round number
+            const latestRound = driverRounds.reduce((max, r) => {
+                const n = parseInt(r.replace(/\D/g, "")) || 0;
+                return n > max ? n : max;
+            }, 0);
+
+            const roundId = latestRound.toString();
+
             const details = document.getElementById(`details-${roundId}`);
             const icon = document.getElementById(`toggle-${roundId}`);
-            
+
             if (details && icon) {
-                details.classList.add('expanded');
-                icon.classList.add('expanded');
-                
-                // Scroll to the expanded round
-                details.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
+                details.classList.add("expanded");
+                icon.classList.add("expanded");
+
+                details.scrollIntoView({ behavior: "smooth", block: "start" });
             }
-        } catch (error) {
-            console.error('Error finding driver round:', error);
+        } catch (e) {
+            console.error("Could not expand driver round:", e);
         }
-    }
+    }, 400);
+}
         
         // Load leaderboard data from Google Sheets
         async function loadLeaderboard() {
@@ -1656,6 +1640,26 @@ async function goToDriverCurrentRound(driverName) {
             }
         }
 
+        function goToDriverProfile(driverName) {
+        // Switch to Drivers tab
+        showTab("drivers");
+    
+        // After data loads
+        setTimeout(() => {
+            const card = document.querySelector(`.driver-card[data-driver="${driverName}"]`);
+            if (card) {
+                card.scrollIntoView({ behavior: "smooth", block: "center" });
+    
+                // Flash highlight
+                card.style.transition = "background 0.4s ease";
+                const original = card.style.background;
+                card.style.background = "#fffa9c";
+                setTimeout(() => card.style.background = original, 700);
+            }
+        }, 500);
+    }
+
+
         function displayLeaderboard(data) {
             const tbody = document.getElementById('leaderboard-body');
             tbody.innerHTML = '';
@@ -1671,7 +1675,7 @@ async function goToDriverCurrentRound(driverName) {
                 
                 tr.innerHTML = `
                     <td data-label="Position"><span class="medal">${medal}</span>${row.position}</td>
-                    el="Driver"><strong style="cursor: pointer; color: #667eea;" class="driver-link" data-driver="${row.driver}">${formattedName}</strong></td>
+                    <td data-label="Driver"><strong style="cursor: pointer; color: #667eea;" class="driver-link" data-driver="${row.driver}">${formattedName}</strong></td>
                     <td data-label="Points"><strong>${row.points}</strong></td>
                     <td data-label="Purple Sectors">${row.purpleSectors}</td>
                     <td data-label="Wins">${row.wins}</td>
@@ -1794,6 +1798,15 @@ async function goToDriverCurrentRound(driverName) {
         function displayRoundData(roundGroups, tracksMap, carsMap) {
             const container = document.getElementById('round-content');
             container.innerHTML = '';
+
+            // Make round driver names clickable
+            document.querySelectorAll('.driver-link-round').forEach(link => {
+                link.addEventListener('click', () => {
+                    const driver = link.getAttribute('data-driver');
+                    goToDriverProfile(driver);
+                });
+            });
+
             
             // Fallback images
             const fallbackTrackImage = 'https://static.vecteezy.com/system/resources/previews/015/114/628/non_2x/race-track-icon-isometric-road-circuit-vector.jpg';
@@ -1883,7 +1896,11 @@ async function goToDriverCurrentRound(driverName) {
                     const formattedName = getFormattedDriverName(row.driver);
                     
                     tr.innerHTML = `
-                        <td data-label="Driver"><strong style="cursor: pointer; color: #667eea;" class="driver-link-round" data-driver="${row.driver}">${formattedName}</strong></td>
+                        <td data-label="Driver">
+                            <strong class="driver-link-round" data-driver="${row.driver}" style="cursor:pointer; color:#667eea;">
+                                ${formattedName}
+                            </strong>
+                        </td>
                         <td data-label="Sector 1">${formatTime(row.sector1)}</td>
                         <td data-label="Sector 2">${formatTime(row.sector2)}</td>
                         <td data-label="Sector 3">${formatTime(row.sector3)}</td>
