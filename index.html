@@ -1647,23 +1647,29 @@ async function goToDriverCurrentRound(driverName) {
         }
 
         function goToDriverProfile(driverName) {
-        // Switch to Drivers tab
-        showTab("drivers");
-    
-        // After data loads
-        setTimeout(() => {
-            const card = document.querySelector(`.driver-card[data-driver="${driverName}"]`);
-            if (card) {
-                card.scrollIntoView({ behavior: "smooth", block: "center" });
-    
-                // Flash highlight
-                card.style.transition = "background 0.4s ease";
-                const original = card.style.background;
-                card.style.background = "#fffa9c";
-                setTimeout(() => card.style.background = original, 700);
-            }
-        }, 500);
-    }
+            // Switch to Drivers tab
+            showTab("drivers");
+        
+            // Wait for the drivers tab to load
+            setTimeout(() => {
+                const card = document.querySelector(`.driver-card[data-driver="${driverName}"]`);
+                
+                if (card) {
+                    // Smooth scroll
+                    card.scrollIntoView({ behavior: "smooth", block: "center" });
+        
+                    // Highlight flash
+                    card.style.transition = "background 0.4s ease";
+                    const originalBg = card.style.background;
+                    card.style.background = "#fffa9c";
+        
+                    setTimeout(() => {
+                        card.style.background = originalBg;
+                    }, 700);
+                }
+        
+            }, 300);
+        }
 
 
         function displayLeaderboard(data) {
@@ -1903,8 +1909,12 @@ async function goToDriverCurrentRound(driverName) {
                     
                     tr.innerHTML = `
                         <td data-label="Driver">
-                            <strong class="driver-link-round" data-driver="${row.driver}" style="cursor:pointer; color:#667eea;">
-                                ${formattedName}
+                            <strong 
+                                class="driver-link-round" 
+                                data-driver="${row.driver}" 
+                                style="cursor: pointer; color: #667eea;"
+                            >
+                                ${formattedName || row.driver}
                             </strong>
                         </td>
                         <td data-label="Sector 1">${formatTime(row.sector1)}</td>
@@ -1926,6 +1936,14 @@ async function goToDriverCurrentRound(driverName) {
             
             document.getElementById('round-loading').style.display = 'none';
             document.getElementById('round-content').style.display = 'block';
+
+            // Make driver names clickable → go to driver profile card
+            document.querySelectorAll('.driver-link-round').forEach(link => {
+                link.addEventListener('click', () => {
+                    const driver = link.getAttribute('data-driver');
+                    goToDriverProfile(driver);
+                });
+            });
 
             // After building all round tables, add click handlers
             setTimeout(() => {
