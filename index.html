@@ -1004,7 +1004,7 @@
         <header>
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; padding: 0 20px;">
                 <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px;">
-                    <img src="https://github.com/ogscii-blip/AMS2RLW/blob/main/AMS2_Logo2.png?raw=true" alt="Automobilista 2" style="max-width: 800px; width: 100%; height: auto;" id="desktopLogo">
+                    <img src="https://static.wixstatic.com/media/9f668b_2250c3bac4704f21875471867dd5c0d7~mv2.png/v1/fit/w_2500,h_1330,al_c/9f668b_2250c3bac4704f21875471867dd5c0d7~mv2.png" alt="Automobilista 2" style="max-width: 400px; width: 100%; height: auto;" id="desktopLogo">
                     <img src="https://images.launchbox-app.com/a8e90521-473b-480d-aa73-c2870aa75ea3.jpg" alt="AMS2" style="max-width: 120px; width: 100%; height: auto; display: none;" id="mobileLogo">
                     <p style="margin: 0; font-size: 1.2em; font-weight: 600; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);" id="subtitle">ABO AMS2 Racing League</p>
                 </div>
@@ -1019,7 +1019,7 @@
                             <!-- Profile Photo with Number Badge (LEFT) -->
                             <div id="userPhotoContainer" style="position: relative; display: none; flex-shrink: 0;">
                                 <img id="userProfilePhoto" src="" alt="Profile" 
-                                     style="width: 90px; height: 90px; border-radius: 50%; border: 3px solid white; object-fit: cover; display: block;">
+                                     style="width: 70px; height: 70px; border-radius: 50%; border: 3px solid white; object-fit: cover; display: block;">
                                 <div id="userNumberBadge" 
                                      style="position: absolute; bottom: -5px; right: -5px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                                             color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; 
@@ -1289,7 +1289,7 @@
                             <label for="sector1" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 1 Time:</label>
                             
                             <!-- Desktop: Single formatted input -->
-                            <input type="tel" id="sector1" name="sector1" required placeholder="00:00,000" inputmode="numeric" pattern="[0-9:,]*"
+                            <input type="tel" id="sector1" name="sector1" placeholder="00:00,000" inputmode="numeric" pattern="[0-9:,]*"
                                    class="time-input-desktop"
                                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; font-family: monospace; letter-spacing: 1px;">
                             
@@ -1312,7 +1312,7 @@
                             <label for="sector2" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 2 Time:</label>
                             
                             <!-- Desktop: Single formatted input -->
-                            <input type="tel" id="sector2" name="sector2" required placeholder="00:00,000" inputmode="numeric" pattern="[0-9:,]*"
+                            <input type="tel" id="sector2" name="sector2" placeholder="00:00,000" inputmode="numeric" pattern="[0-9:,]*"
                                    class="time-input-desktop"
                                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; font-family: monospace; letter-spacing: 1px;">
                             
@@ -1335,7 +1335,7 @@
                             <label for="sector3" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 3 Time:</label>
                             
                             <!-- Desktop: Single formatted input -->
-                            <input type="tel" id="sector3" name="sector3" required placeholder="00:00,000" inputmode="numeric" pattern="[0-9:,]*"
+                            <input type="tel" id="sector3" name="sector3" placeholder="00:00,000" inputmode="numeric" pattern="[0-9:,]*"
                                    class="time-input-desktop"
                                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; font-family: monospace; letter-spacing: 1px;">
                             
@@ -2762,19 +2762,32 @@
                 const secInput = document.getElementById(`${sectorId}-sec`);
                 const msInput = document.getElementById(`${sectorId}-ms`);
                 
-                const seconds = (secInput.value || '').padStart(2, '0');
-                const milliseconds = (msInput.value || '').padStart(3, '0');
+                if (!secInput || !msInput) {
+                    return ''; // Return empty if inputs don't exist
+                }
                 
-                // Format as mm:ss,mmm (convert SS to mm:ss)
-                const totalSeconds = parseInt(seconds) || 0;
+                const seconds = secInput.value || '';
+                const milliseconds = msInput.value || '';
+                
+                // Validate that both fields have values
+                if (seconds === '' || milliseconds === '') {
+                    return ''; // Return empty if incomplete
+                }
+                
+                // Pad values
+                const paddedSeconds = seconds.padStart(2, '0');
+                const paddedMilliseconds = milliseconds.padStart(3, '0');
+                
+                // Convert SS.mmm to mm:ss,mmm format
+                const totalSeconds = parseInt(paddedSeconds);
                 const minutes = Math.floor(totalSeconds / 60);
                 const remainingSeconds = totalSeconds % 60;
                 
-                return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')},${milliseconds}`;
+                return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')},${paddedMilliseconds}`;
             } else {
-                // Get from desktop single input (already formatted)
+                // Get from desktop single input (already formatted as mm:ss,mmm)
                 const input = document.getElementById(sectorId);
-                return input.value;
+                return input ? input.value : '';
             }
         }
 
@@ -2798,9 +2811,28 @@
             
             const messageDiv = document.getElementById('lapTimeMessage');
             
-            // Validate format
+            console.log('Form submission - Values:', { sector1, sector2, sector3, isMobile: window.innerWidth <= 768 });
+            
+            // Check if any time is empty
+            if (!sector1 || !sector2 || !sector3) {
+                messageDiv.style.display = 'block';
+                messageDiv.style.background = '#f8d7da';
+                messageDiv.style.color = '#721c24';
+                messageDiv.textContent = '❌ Please fill in all sector times.';
+                console.log('Validation failed: empty fields');
+                return;
+            }
+            
+            // Validate format (should be mm:ss,mmm)
             const timePattern = /^\d{2}:\d{2},\d{3}$/;
             if (!timePattern.test(sector1) || !timePattern.test(sector2) || !timePattern.test(sector3)) {
+                messageDiv.style.display = 'block';
+                messageDiv.style.background = '#f8d7da';
+                messageDiv.style.color = '#721c24';
+                messageDiv.textContent = '❌ Invalid time format. Please ensure all sectors are filled in correctly.';
+                console.log('Validation failed: format check', { sector1, sector2, sector3 });
+                return;
+            }
                 messageDiv.style.display = 'block';
                 messageDiv.style.background = '#f8d7da';
                 messageDiv.style.color = '#721c24';
