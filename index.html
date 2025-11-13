@@ -665,6 +665,57 @@
             }
         }
 
+        /* Responsive Time Inputs - Desktop single input, Mobile split inputs */
+        .time-input-desktop {
+            display: block;
+        }
+
+        .time-input-mobile {
+            display: none;
+        }
+
+        .time-input-split-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .time-input-split-field {
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
+
+        .time-input-split-seconds {
+            width: 70px;
+        }
+
+        .time-input-split-milliseconds {
+            width: 90px;
+        }
+
+        .time-split-separator {
+            font-size: 20px;
+            font-weight: bold;
+            color: #666;
+        }
+
+        /* Switch to split inputs on mobile */
+        @media screen and (max-width: 768px) {
+            .time-input-desktop {
+                display: none;
+            }
+            
+            .time-input-mobile {
+                display: block;
+            }
+        }
+
         /* Round cards styling */
         .round-cards-grid {
             display: grid;
@@ -1236,23 +1287,71 @@
 
                         <div>
                             <label for="sector1" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 1 Time:</label>
-                            <input type="text" id="sector1" name="sector1" required placeholder="00:00,000" maxlength="9"
+                            
+                            <!-- Desktop: Single formatted input -->
+                            <input type="tel" id="sector1" name="sector1" required placeholder="00:00,000" inputmode="numeric" pattern="[0-9:,]*"
+                                   class="time-input-desktop"
                                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; font-family: monospace; letter-spacing: 1px;">
-                            <small style="color: #666;">Just type numbers: 12345 → 00:12,345</small>
+                            
+                            <!-- Mobile: Split inputs -->
+                            <div class="time-input-mobile">
+                                <div class="time-input-split-container">
+                                    <input type="tel" id="sector1-sec" maxlength="2" placeholder="00" inputmode="numeric" pattern="[0-9]*"
+                                           class="time-input-split-field time-input-split-seconds">
+                                    <span class="time-split-separator">.</span>
+                                    <input type="tel" id="sector1-ms" maxlength="3" placeholder="000" inputmode="numeric" pattern="[0-9]*"
+                                           class="time-input-split-field time-input-split-milliseconds">
+                                </div>
+                                <small style="display: block; margin-top: 5px; color: #666; text-align: center;">Format: SS.mmm (e.g., 12.345)</small>
+                            </div>
+                            
+                            <small class="time-input-desktop" style="color: #666;">Just type numbers: 12345 → 00:12,345</small>
                         </div>
 
                         <div>
                             <label for="sector2" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 2 Time:</label>
-                            <input type="text" id="sector2" name="sector2" required placeholder="00:00,000" maxlength="9"
+                            
+                            <!-- Desktop: Single formatted input -->
+                            <input type="tel" id="sector2" name="sector2" required placeholder="00:00,000" inputmode="numeric" pattern="[0-9:,]*"
+                                   class="time-input-desktop"
                                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; font-family: monospace; letter-spacing: 1px;">
-                            <small style="color: #666;">Just type numbers: 13234 → 00:13,234</small>
+                            
+                            <!-- Mobile: Split inputs -->
+                            <div class="time-input-mobile">
+                                <div class="time-input-split-container">
+                                    <input type="tel" id="sector2-sec" maxlength="2" placeholder="00" inputmode="numeric" pattern="[0-9]*"
+                                           class="time-input-split-field time-input-split-seconds">
+                                    <span class="time-split-separator">.</span>
+                                    <input type="tel" id="sector2-ms" maxlength="3" placeholder="000" inputmode="numeric" pattern="[0-9]*"
+                                           class="time-input-split-field time-input-split-milliseconds">
+                                </div>
+                                <small style="display: block; margin-top: 5px; color: #666; text-align: center;">Format: SS.mmm (e.g., 23.456)</small>
+                            </div>
+                            
+                            <small class="time-input-desktop" style="color: #666;">Just type numbers: 13234 → 00:13,234</small>
                         </div>
 
                         <div>
                             <label for="sector3" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 3 Time:</label>
-                            <input type="text" id="sector3" name="sector3" required placeholder="00:00,000" maxlength="9"
+                            
+                            <!-- Desktop: Single formatted input -->
+                            <input type="tel" id="sector3" name="sector3" required placeholder="00:00,000" inputmode="numeric" pattern="[0-9:,]*"
+                                   class="time-input-desktop"
                                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; font-family: monospace; letter-spacing: 1px;">
-                            <small style="color: #666;">Just type numbers: 14456 → 00:14,456</small>
+                            
+                            <!-- Mobile: Split inputs -->
+                            <div class="time-input-mobile">
+                                <div class="time-input-split-container">
+                                    <input type="tel" id="sector3-sec" maxlength="2" placeholder="00" inputmode="numeric" pattern="[0-9]*"
+                                           class="time-input-split-field time-input-split-seconds">
+                                    <span class="time-split-separator">.</span>
+                                    <input type="tel" id="sector3-ms" maxlength="3" placeholder="000" inputmode="numeric" pattern="[0-9]*"
+                                           class="time-input-split-field time-input-split-milliseconds">
+                                </div>
+                                <small style="display: block; margin-top: 5px; color: #666; text-align: center;">Format: SS.mmm (e.g., 34.567)</small>
+                            </div>
+                            
+                            <small class="time-input-desktop" style="color: #666;">Just type numbers: 14456 → 00:14,456</small>
                         </div>
 
                         <button type="submit" class="refresh-btn" style="width: 100%; padding: 15px; font-size: 1.1em; margin: 0;">
@@ -2354,79 +2453,100 @@
             updateSubmitTabVisibility();
         });
 
-        // Setup sector time input masking
+        // Setup sector time input masking (responsive: desktop single input, mobile split inputs)
         function setupSectorTimeInputs() {
             const sectorInputs = ['sector1', 'sector2', 'sector3'];
             
             sectorInputs.forEach(inputId => {
-                const input = document.getElementById(inputId);
-                let rawValue = '';
+                const desktopInput = document.getElementById(inputId);
+                const secInput = document.getElementById(`${inputId}-sec`);
+                const msInput = document.getElementById(`${inputId}-ms`);
                 
-                input.addEventListener('keydown', function(e) {
-                    // Allow: backspace, delete, tab, escape, enter, arrows, Ctrl+A, Ctrl+C, Ctrl+V
-                    if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode) ||
-                        (e.ctrlKey || e.metaKey)) {
+                // DESKTOP INPUT HANDLING (existing logic)
+                if (desktopInput) {
+                    let lastFormattedValue = '';
+                    
+                    desktopInput.addEventListener('input', function(e) {
+                        // Get current value and strip all non-digits
+                        let value = e.target.value.replace(/[^0-9]/g, '');
                         
-                        if (e.keyCode === 8) { // Backspace
-                            e.preventDefault();
-                            rawValue = rawValue.slice(0, -1);
-                            updateDisplay(input, rawValue);
+                        // Limit to 7 digits
+                        if (value.length > 7) {
+                            value = value.slice(0, 7);
                         }
-                        return;
-                    }
+                        
+                        // Format and update immediately
+                        if (value.length === 0) {
+                            e.target.value = '';
+                            lastFormattedValue = '';
+                        } else {
+                            // Pad to 7 digits
+                            const padded = value.padStart(7, '0');
+                            
+                            // Format as mm:ss,mmm
+                            const formatted = padded.slice(0, 2) + ':' + padded.slice(2, 4) + ',' + padded.slice(4, 7);
+                            e.target.value = formatted;
+                            lastFormattedValue = formatted;
+                        }
+                    });
                     
-                    // Only allow numbers
-                    if ((e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
+                    // Handle blur to ensure formatting
+                    desktopInput.addEventListener('blur', function(e) {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        if (value.length > 0) {
+                            const padded = value.padStart(7, '0');
+                            const formatted = padded.slice(0, 2) + ':' + padded.slice(2, 4) + ',' + padded.slice(4, 7);
+                            e.target.value = formatted;
+                        }
+                    });
+                    
+                    // Handle focus - select all for easy replacement
+                    desktopInput.addEventListener('focus', function(e) {
+                        // Small delay to let mobile keyboard appear
+                        setTimeout(() => {
+                            e.target.select();
+                        }, 100);
+                    });
+                    
+                    desktopInput.addEventListener('paste', function(e) {
                         e.preventDefault();
-                        return;
-                    }
-                    
-                    e.preventDefault();
-                    
-                    // Get the digit
-                    let digit;
-                    if (e.keyCode >= 96 && e.keyCode <= 105) {
-                        digit = (e.keyCode - 96).toString();
-                    } else {
-                        digit = (e.keyCode - 48).toString();
-                    }
-                    
-                    // Add digit if under limit (7 digits: mmssmmm)
-                    if (rawValue.length < 7) {
-                        rawValue += digit;
-                        updateDisplay(input, rawValue);
-                    }
-                });
+                        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                        const digits = pastedText.replace(/[^0-9]/g, '');
+                        
+                        if (digits.length > 0) {
+                            const value = digits.slice(0, 7);
+                            const padded = value.padStart(7, '0');
+                            const formatted = padded.slice(0, 2) + ':' + padded.slice(2, 4) + ',' + padded.slice(4, 7);
+                            e.target.value = formatted;
+                        }
+                    });
+                }
                 
-                input.addEventListener('paste', function(e) {
-                    e.preventDefault();
-                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-                    const digits = pastedText.replace(/[^0-9]/g, '');
-                    rawValue = digits.slice(-7); // Take last 7 digits
-                    updateDisplay(input, rawValue);
-                });
-                
-                input.addEventListener('focus', function(e) {
-                    if (e.target.value === '00:00,000') {
-                        rawValue = '';
-                        e.target.value = '';
-                    } else {
-                        rawValue = e.target.value.replace(/[^0-9]/g, '');
-                    }
-                });
-                
-                function updateDisplay(input, raw) {
-                    if (raw.length === 0) {
-                        input.value = '';
-                        return;
-                    }
+                // MOBILE SPLIT INPUTS HANDLING
+                if (secInput && msInput) {
+                    // Only allow numbers
+                    [secInput, msInput].forEach(input => {
+                        input.addEventListener('input', function() {
+                            this.value = this.value.replace(/[^0-9]/g, '');
+                        });
+                    });
                     
-                    // Pad to 7 digits on the left (mmssmmm)
-                    const padded = raw.padStart(7, '0');
+                    // Auto-advance from seconds to milliseconds when 2 digits entered
+                    secInput.addEventListener('input', function() {
+                        if (this.value.length >= 2) {
+                            msInput.focus();
+                        }
+                    });
                     
-                    // Format as mm:ss,mmm
-                    const formatted = padded.slice(0, 2) + ':' + padded.slice(2, 4) + ',' + padded.slice(4, 7);
-                    input.value = formatted;
+                    // Handle backspace in milliseconds - go back to seconds if empty
+                    msInput.addEventListener('keydown', function(e) {
+                        if (e.key === 'Backspace' && this.value.length === 0 && this.selectionStart === 0) {
+                            secInput.focus();
+                            setTimeout(() => {
+                                secInput.selectionStart = secInput.selectionEnd = secInput.value.length;
+                            }, 0);
+                        }
+                    });
                 }
             });
         }
@@ -2633,6 +2753,31 @@
         });
 
         // Handle Lap Time form submission
+        // Helper function to get time value from responsive inputs (desktop or mobile)
+        function getSectorTimeValue(sectorId) {
+            const isMobile = window.innerWidth <= 768;
+            
+            if (isMobile) {
+                // Get from mobile split inputs
+                const secInput = document.getElementById(`${sectorId}-sec`);
+                const msInput = document.getElementById(`${sectorId}-ms`);
+                
+                const seconds = (secInput.value || '').padStart(2, '0');
+                const milliseconds = (msInput.value || '').padStart(3, '0');
+                
+                // Format as mm:ss,mmm (convert SS to mm:ss)
+                const totalSeconds = parseInt(seconds) || 0;
+                const minutes = Math.floor(totalSeconds / 60);
+                const remainingSeconds = totalSeconds % 60;
+                
+                return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')},${milliseconds}`;
+            } else {
+                // Get from desktop single input (already formatted)
+                const input = document.getElementById(sectorId);
+                return input.value;
+            }
+        }
+
         document.getElementById('lapTimeForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -2647,9 +2792,9 @@
             }
             
             const roundNumber = document.getElementById('roundNumber2').value;
-            const sector1 = document.getElementById('sector1').value;
-            const sector2 = document.getElementById('sector2').value;
-            const sector3 = document.getElementById('sector3').value;
+            const sector1 = getSectorTimeValue('sector1');
+            const sector2 = getSectorTimeValue('sector2');
+            const sector3 = getSectorTimeValue('sector3');
             
             const messageDiv = document.getElementById('lapTimeMessage');
             
