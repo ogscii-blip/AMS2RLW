@@ -271,10 +271,6 @@
             background: #fff;
         }
 
-        .season-number::before {
-            content: "Season ";
-        }
-
         .toggle-icon {
             font-size: 1.2em;
             transition: transform 0.3s ease;
@@ -669,46 +665,6 @@
             }
         }
 
-        /* Time Inputs - Split inputs for all screen sizes */
-        .time-input-desktop {
-            display: none;
-        }
-
-        .time-input-mobile {
-            display: block;
-        }
-
-        .time-input-split-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-        }
-
-        .time-input-split-field {
-            padding: 12px;
-            font-size: 16px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            text-align: center;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 1px;
-        }
-
-        .time-input-split-seconds {
-            width: 70px;
-        }
-
-        .time-input-split-milliseconds {
-            width: 90px;
-        }
-
-        .time-split-separator {
-            font-size: 20px;
-            font-weight: bold;
-            color: #666;
-        }
-
         /* Round cards styling */
         .round-cards-grid {
             display: grid;
@@ -997,7 +953,7 @@
         <header>
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; padding: 0 20px;">
                 <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px;">
-                    <img src="https://github.com/ogscii-blip/AMS2RLW/blob/main/AMS2_Logo2.png?raw=true" alt="Automobilista 2" style="max-width: 800px; width: 100%; height: auto;" id="desktopLogo">
+                    <img src="https://static.wixstatic.com/media/9f668b_2250c3bac4704f21875471867dd5c0d7~mv2.png/v1/fit/w_2500,h_1330,al_c/9f668b_2250c3bac4704f21875471867dd5c0d7~mv2.png" alt="Automobilista 2" style="max-width: 400px; width: 100%; height: auto;" id="desktopLogo">
                     <img src="https://images.launchbox-app.com/a8e90521-473b-480d-aa73-c2870aa75ea3.jpg" alt="AMS2" style="max-width: 120px; width: 100%; height: auto; display: none;" id="mobileLogo">
                     <p style="margin: 0; font-size: 1.2em; font-weight: 600; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);" id="subtitle">ABO AMS2 Racing League</p>
                 </div>
@@ -1012,7 +968,7 @@
                             <!-- Profile Photo with Number Badge (LEFT) -->
                             <div id="userPhotoContainer" style="position: relative; display: none; flex-shrink: 0;">
                                 <img id="userProfilePhoto" src="" alt="Profile" 
-                                     style="width: 90px; height: 90px; border-radius: 50%; border: 3px solid white; object-fit: cover; display: block;">
+                                     style="width: 70px; height: 70px; border-radius: 50%; border: 3px solid white; object-fit: cover; display: block;">
                                 <div id="userNumberBadge" 
                                      style="position: absolute; bottom: -5px; right: -5px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                                             color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; 
@@ -1212,13 +1168,6 @@
 
                 <div style="background: #fff; padding: 30px; border-radius: 10px; max-width: 600px; margin: 0 auto;">
                     <form id="roundSetupForm" style="display: flex; flex-direction: column; gap: 20px;">
-                         <div>
-                            <label for="season" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Season:</label>
-                            <input type="number" id="season" name="season" required min="1"
-                                   style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
-                        </div>
-
-                        
                         <div>
                             <label for="roundNumber" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Round Number:</label>
                             <input type="number" id="roundNumber" name="roundNumber" required min="1" 
@@ -1240,7 +1189,13 @@
                                 <option value="">Loading cars...</option>
                             </select>
                         </div>
-                        
+
+                        <div>
+                            <label for="season" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Season:</label>
+                            <input type="text" id="season" name="season" required placeholder="e.g., Season 1" 
+                                   style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em;">
+                        </div>
+
                         <button type="submit" class="refresh-btn" style="width: 100%; padding: 15px; font-size: 1.1em; margin: 0;">
                             ✅ Submit Round Setup
                         </button>
@@ -1264,17 +1219,10 @@
                 <div class="instructions">
                     <h3>📝 Instructions:</h3>
                     <ol>
-                        <li>Select the round number you're submitting for (must match a configured round)</li>
-                        <li>Enter your sector times using the split input fields:
-                            <ul style="margin-top: 5px;">
-                                <li><strong>Seconds:</strong> Type up to 2 digits (e.g., "12")</li>
-                                <li><strong>Milliseconds:</strong> Type up to 3 digits (e.g., "345")</li>
-                                <li>Format automatically displays as 00:12,345</li>
-                            </ul>
-                        </li>
-                        <li>Press Tab or tap the next field to move between inputs</li>
-                        <li>You can submit multiple attempts per round - only your fastest lap counts for points!</li>
-                        <li>Your driver name is automatically filled based on your signed-in email</li>
+                        <li>Select the round number you're submitting for</li>
+                        <li>Enter your sector times - just type the numbers (e.g., type "12345" and it becomes "00:12,345")</li>
+                        <li>You can submit multiple times per round - only your fastest lap counts!</li>
+                        <li>Your driver name will be filled automatically based on your email</li>
                     </ol>
                 </div>
                 
@@ -1288,65 +1236,23 @@
 
                         <div>
                             <label for="sector1" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 1 Time:</label>
-                            
-                            <!-- Desktop: Single formatted input -->
-                            <input type="tel" id="sector1" name="sector1" placeholder="00:00,000" inputmode="numeric" pattern="[0-9:,]*"
-                                   class="time-input-desktop"
+                            <input type="tel" id="sector1" name="sector1" required placeholder="00:00,000" inputmode="numeric" pattern="[0-9:,]*"
                                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; font-family: monospace; letter-spacing: 1px;">
-                            
-                            <!-- Mobile: Split inputs -->
-                            <div class="time-input-mobile">
-                                <div class="time-input-split-container">
-                                    <input type="tel" id="sector1-sec" maxlength="2" placeholder="00" inputmode="numeric" pattern="[0-9]*"
-                                           class="time-input-split-field time-input-split-seconds">
-                                    <span class="time-split-separator">.</span>
-                                    <input type="tel" id="sector1-ms" maxlength="3" placeholder="000" inputmode="numeric" pattern="[0-9]*"
-                                           class="time-input-split-field time-input-split-milliseconds">
-                                </div>
-                                <small style="display: block; margin-top: 5px; color: #666; text-align: center;">Enter seconds (2 digits) then milliseconds (3 digits). Auto-advances when complete.</small>
-                            </div>
+                            <small style="color: #666;">Just type numbers: 12345 → 00:12,345</small>
                         </div>
 
                         <div>
                             <label for="sector2" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 2 Time:</label>
-                            
-                            <!-- Desktop: Single formatted input -->
-                            <input type="tel" id="sector2" name="sector2" placeholder="00:00,000" inputmode="numeric" pattern="[0-9:,]*"
-                                   class="time-input-desktop"
+                            <input type="tel" id="sector2" name="sector2" required placeholder="00:00,000" inputmode="numeric" pattern="[0-9:,]*"
                                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; font-family: monospace; letter-spacing: 1px;">
-                            
-                            <!-- Mobile: Split inputs -->
-                            <div class="time-input-mobile">
-                                <div class="time-input-split-container">
-                                    <input type="tel" id="sector2-sec" maxlength="2" placeholder="00" inputmode="numeric" pattern="[0-9]*"
-                                           class="time-input-split-field time-input-split-seconds">
-                                    <span class="time-split-separator">.</span>
-                                    <input type="tel" id="sector2-ms" maxlength="3" placeholder="000" inputmode="numeric" pattern="[0-9]*"
-                                           class="time-input-split-field time-input-split-milliseconds">
-                                </div>
-                                <small style="display: block; margin-top: 5px; color: #666; text-align: center;">Enter seconds (2 digits) then milliseconds (3 digits). Auto-advances when complete.</small>
-                            </div>
+                            <small style="color: #666;">Just type numbers: 13234 → 00:13,234</small>
                         </div>
 
                         <div>
                             <label for="sector3" style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Sector 3 Time:</label>
-                            
-                            <!-- Desktop: Single formatted input -->
-                            <input type="tel" id="sector3" name="sector3" placeholder="00:00,000" inputmode="numeric" pattern="[0-9:,]*"
-                                   class="time-input-desktop"
+                            <input type="tel" id="sector3" name="sector3" required placeholder="00:00,000" inputmode="numeric" pattern="[0-9:,]*"
                                    style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 1em; font-family: monospace; letter-spacing: 1px;">
-                            
-                            <!-- Mobile: Split inputs -->
-                            <div class="time-input-mobile">
-                                <div class="time-input-split-container">
-                                    <input type="tel" id="sector3-sec" maxlength="2" placeholder="00" inputmode="numeric" pattern="[0-9]*"
-                                           class="time-input-split-field time-input-split-seconds">
-                                    <span class="time-split-separator">.</span>
-                                    <input type="tel" id="sector3-ms" maxlength="3" placeholder="000" inputmode="numeric" pattern="[0-9]*"
-                                           class="time-input-split-field time-input-split-milliseconds">
-                                </div>
-                                <small style="display: block; margin-top: 5px; color: #666; text-align: center;">Enter seconds (2 digits) then milliseconds (3 digits). Auto-advances when complete.</small>
-                            </div>
+                            <small style="color: #666;">Just type numbers: 14456 → 00:14,456</small>
                         </div>
 
                         <button type="submit" class="refresh-btn" style="width: 100%; padding: 15px; font-size: 1.1em; margin: 0;">
@@ -1366,21 +1272,16 @@
             <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; margin-bottom: 20px; color: #1565c0;">
                 <h3 style="color: #1565c0; margin-bottom: 15px;">🏁 How It Works</h3>
                 <ul style="margin-left: 20px; line-height: 1.8;">
-                    <li>Sign in with your registered email to participate</li>
-                    <li>Complete hot laps on configured tracks and record your sector times</li>
-                    <li>Enter times using split inputs: <strong>Seconds</strong> (up to 2 digits) and <strong>Milliseconds</strong> (up to 3 digits)</li>
-                    <li>Submit your times through the form - you can submit multiple attempts per round</li>
+                    <li>Complete your lap and record your sector times</li>
+                    <li>Submit your times through the form</li>
+                    <li>You can submit multiple attempts per round</li>
                     <li><strong>Only your fastest lap per round counts for points</strong></li>
-                    <li>Compete across multiple seasons - each season has its own championship standings</li>
-                    <li>Purple sectors are awarded for the fastest time in each individual sector within a round</li>
+                    <li>Purple sectors are awarded for the fastest time in each individual sector</li>
                 </ul>
             </div>
 
             <div style="background: #f3e5f5; padding: 20px; border-radius: 10px; margin-bottom: 20px; color: #6a1b9a;">
                 <h3 style="color: #6a1b9a; margin-bottom: 15px;">🎯 Points System</h3>
-                <p style="margin-bottom: 15px; line-height: 1.6;">
-                    Points are awarded to the top 3 finishers in each round. Your position is determined by your <strong>best lap time</strong> for that round.
-                </p>
                 <table style="width: 100%; margin-top: 10px;">
                     <tr>
                         <td style="padding: 10px; font-weight: bold; color: #6a1b9a;">🥇 1st Place:</td>
@@ -1388,55 +1289,38 @@
                     </tr>
                     <tr>
                         <td style="padding: 10px; font-weight: bold; color: #6a1b9a;">🥈 2nd Place:</td>
-                        <td style="padding: 10px; color: #6a1b9a;">6 points + 1 point per purple sector (max 2 purple sectors counted)</td>
+                        <td style="padding: 10px; color: #6a1b9a;">6 points + 1 point per purple sector (max 2)</td>
                     </tr>
                     <tr>
                         <td style="padding: 10px; font-weight: bold; color: #6a1b9a;">🥉 3rd Place:</td>
-                        <td style="padding: 10px; color: #6a1b9a;">4 points + 2 points per purple sector (max 2 purple sectors counted)</td>
+                        <td style="padding: 10px; color: #6a1b9a;">4 points + 2 points per purple sector (max 2)</td>
                     </tr>
                 </table>
-                <p style="margin-top: 15px; font-size: 0.95em; font-style: italic; color: #6a1b9a;">
-                    <strong>Example:</strong> If you finish 2nd with 2 purple sectors, you earn 6 + 1 + 1 = 8 points total.
-                </p>
             </div>
 
             <div style="background: #fff3e0; padding: 20px; border-radius: 10px; color: #e65100;">
                 <h3 style="color: #e65100; margin-bottom: 15px;">⚡ Purple Sectors</h3>
                 <p style="line-height: 1.8;">
                     A <strong>Purple Sector</strong> is awarded when you set the fastest time in a specific sector (Sector 1, 2, or 3) 
-                    <strong>among all drivers' best laps in that round</strong>. You can earn up to 3 purple sectors per round (one for each sector).
+                    within a round, regardless of your overall position. You can earn up to 3 purple sectors per round (one for each sector).
                     <br><br>
-                    Purple sectors are calculated by comparing each driver's fastest lap for the round - not all submitted attempts.
-                    <br><br>
-                    <strong>Note:</strong> 1st place drivers don't receive bonus points for purple sectors in the points calculation, but purple sectors are still tracked for tiebreakers and statistics!
+                    <strong>Note:</strong> 1st place drivers don't receive bonus points for purple sectors, but they are still tracked!
                 </p>
             </div>
 
             <div style="background: #e8f5e9; padding: 20px; border-radius: 10px; margin-top: 20px; color: #2e7d32;">
-                <h3 style="color: #2e7d32; margin-bottom: 15px;">🏆 Championship & Tie-Breakers</h3>
-                <p style="line-height: 1.8; margin-bottom: 15px;">
-                    Your championship position is determined by your <strong>total points</strong> accumulated across all rounds in a season.
-                </p>
+                <h3 style="color: #2e7d32; margin-bottom: 15px;">🏆 Championship Tie-Breakers</h3>
                 <p style="line-height: 1.8;">
                     If two or more drivers have the same number of points, the following tie-breakers are used <strong>in order</strong>:
                 </p>
                 <ol style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
                     <li><strong>Total Wins:</strong> Driver with more 1st place finishes ranks higher</li>
                     <li><strong>Total Purple Sectors:</strong> If still tied, driver with more purple sectors ranks higher</li>
-                    <li><strong>Head-to-Head:</strong> If still tied, head-to-head record between tied drivers in rounds they both competed</li>
+                    <li><strong>Head-to-Head:</strong> If still tied, head-to-head record between tied drivers</li>
                 </ol>
-            </div>
-
-            <div style="background: #fce4ec; padding: 20px; border-radius: 10px; margin-top: 20px; color: #c2185b;">
-                <h3 style="color: #c2185b; margin-bottom: 15px;">📅 Seasons</h3>
-                <p style="line-height: 1.8;">
-                    The league is organized into <strong>seasons</strong>. Each season contains multiple rounds with different track/car combinations.
-                    <br><br>
-                    • Use the season filter in Overall Standings to view results for specific seasons or all seasons combined
-                    <br>
-                    • Round Setup requires a season designation when configuring new rounds
-                    <br>
-                    • Only laps submitted for the correct round and season count toward standings
+                <p style="margin-top: 15px; font-style: italic;">
+                    Example: If both drivers have 20 points, the driver with more wins ranks higher. If they have the same wins, 
+                    the driver with more purple sectors ranks higher.
                 </p>
             </div>
         </div>
@@ -1485,9 +1369,6 @@
         }
 
         // Tab switching functionality
-	
-	<script>
-        // Tab switching functionality
         function showTab(tabName) {
             // Hide all tabs
             const tabs = document.querySelectorAll('.tab-content');
@@ -1510,34 +1391,26 @@
                 loadRoundData();
             } else if (tabName === 'drivers') {
                 loadDriverStats();
-          } else if (tabName === 'profile') {
+            } else if (tabName === 'profile') {
                 loadProfile();
             } else if (tabName === 'setup') {
                 loadRoundSetup();
             }
         }
-		
-		
-		
+
         // Load leaderboard data from Google Sheets
-        //async function loadLeaderboard() {
+        async function loadLeaderboard() {
     // Add cache-busting parameter to force fresh data
-    //const timestamp = new Date().getTime();
-    //const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=0&single=true&output=csv&t=${timestamp}`;
-    
-    //try {
-    //    const response = await fetch(sheetUrl, {
-    //        cache: 'no-store',
-    //        headers: {
-    //            'Cache-Control': 'no-cache'
-    //        }
-    //    });
-	
-	async function loadLeaderboard() {
-    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=0&single=true&output=csv';
+    const timestamp = new Date().getTime();
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=0&single=true&output=csv&t=${timestamp}`;
     
     try {
-        const response = await fetchWithNoCache(sheetUrl);
+        const response = await fetch(sheetUrl, {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
         const csvText = await response.text();
         
         // Parse CSV
@@ -1567,8 +1440,6 @@
         
         // Load round data to get rounds count
         loadRoundsCount();
-		// Update last refresh time
-        updateLastRefreshTime();
     } catch (error) {
         console.error('Error loading leaderboard:', error);
     }
@@ -1599,22 +1470,17 @@
             return driverLoginName;
         }
 
-        //async function loadRoundsCount() {
-        //    const timestamp = new Date().getTime();
-        //    const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
+        async function loadRoundsCount() {
+            const timestamp = new Date().getTime();
+            const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
             
-        //    try {
-        //        const response = await fetch(sheetUrl, {
-        //            cache: 'no-store',
-        //            headers: {
-        //                'Cache-Control': 'no-cache'
-        //            }
-        //        });
-		async function loadRoundsCount() {
-			const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv';
-    
-			try {
-				const response = await fetchWithNoCache(sheetUrl);
+            try {
+                const response = await fetch(sheetUrl, {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache'
+                    }
+                });
                 const csvText = await response.text();
                 const rows = csvText.split('\n').slice(1);
                 const allData = rows
@@ -1659,29 +1525,19 @@
             document.getElementById('leaderboard-content').style.display = 'block';
         }
 
-    //    async function loadRoundData() {
-    //const timestamp = new Date().getTime();
-    //const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
-    //const tracksUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=1346258272&single=true&output=csv';
-    //const carsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=208034687&single=true&output=csv';
+        async function loadRoundData() {
+    const timestamp = new Date().getTime();
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
+    const tracksUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=1346258272&single=true&output=csv';
+    const carsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=208034687&single=true&output=csv';
     
-    //try {
-    //    const [dataResponse, tracksResponse, carsResponse] = await Promise.all([
-    //        fetch(sheetUrl, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } }),
-    //        fetch(tracksUrl, { cache: 'no-store' }),
-    //        fetch(carsUrl, { cache: 'no-store' })
-    //    ]);
-     async function loadRoundData() {
-		const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv';
-		const tracksUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=1346258272&single=true&output=csv';
-		const carsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=208034687&single=true&output=csv';
-    
-		try {
-			const [dataResponse, tracksResponse, carsResponse] = await Promise.all([
-				fetchWithNoCache(sheetUrl),
-				fetchWithNoCache(tracksUrl),
-				fetchWithNoCache(carsUrl)
-			]);   
+    try {
+        const [dataResponse, tracksResponse, carsResponse] = await Promise.all([
+            fetch(sheetUrl, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } }),
+            fetch(tracksUrl, { cache: 'no-store' }),
+            fetch(carsUrl, { cache: 'no-store' })
+        ]);
+        
         const [csvText, tracksCSV, carsCSV] = await Promise.all([
             dataResponse.text(),
             tracksResponse.text(),
@@ -1884,25 +1740,17 @@
         }
 
         // Load driver statistics
-        //async function loadDriverStats() {
-        //    const timestamp = new Date().getTime();
-        //    const roundDataUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
-        //    const leaderboardUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=0&single=true&output=csv&t=${timestamp}`;
-            
-        //    try {
-        //        const [roundDataResponse, leaderboardResponse] = await Promise.all([
-        //            fetch(roundDataUrl, { cache: 'no-store' }),
-        //            fetch(leaderboardUrl, { cache: 'no-store' })
-        //        ]);
         async function loadDriverStats() {
-			const roundDataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv';
-			const leaderboardUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=0&single=true&output=csv';
-    
-			try {
-				const [roundDataResponse, leaderboardResponse] = await Promise.all([
-					fetchWithNoCache(roundDataUrl),
-					fetchWithNoCache(leaderboardUrl)
-				]);        
+            const timestamp = new Date().getTime();
+            const roundDataUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
+            const leaderboardUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=0&single=true&output=csv&t=${timestamp}`;
+            
+            try {
+                const [roundDataResponse, leaderboardResponse] = await Promise.all([
+                    fetch(roundDataUrl, { cache: 'no-store' }),
+                    fetch(leaderboardUrl, { cache: 'no-store' })
+                ]);
+                
                 const [roundDataCSV, leaderboardCSV] = await Promise.all([
                     roundDataResponse.text(),
                     leaderboardResponse.text()
@@ -2547,39 +2395,70 @@
             updateSubmitTabVisibility();
         });
 
-        // Setup sector time input handling (split inputs for all screen sizes)
+        // Setup sector time input masking
         function setupSectorTimeInputs() {
             const sectorInputs = ['sector1', 'sector2', 'sector3'];
             
             sectorInputs.forEach(inputId => {
-                const secInput = document.getElementById(`${inputId}-sec`);
-                const msInput = document.getElementById(`${inputId}-ms`);
+                const input = document.getElementById(inputId);
                 
-                if (secInput && msInput) {
-                    // Only allow numbers
-                    [secInput, msInput].forEach(input => {
-                        input.addEventListener('input', function() {
-                            this.value = this.value.replace(/[^0-9]/g, '');
-                        });
-                    });
+                // Store cursor position for better UX
+                let lastFormattedValue = '';
+                
+                input.addEventListener('input', function(e) {
+                    // Get current value and strip all non-digits
+                    let value = e.target.value.replace(/[^0-9]/g, '');
                     
-                    // Auto-advance from seconds to milliseconds when 2 digits entered
-                    secInput.addEventListener('input', function() {
-                        if (this.value.length >= 2) {
-                            msInput.focus();
-                        }
-                    });
+                    // Limit to 7 digits
+                    if (value.length > 7) {
+                        value = value.slice(0, 7);
+                    }
                     
-                    // Handle backspace in milliseconds - go back to seconds if empty
-                    msInput.addEventListener('keydown', function(e) {
-                        if (e.key === 'Backspace' && this.value.length === 0 && this.selectionStart === 0) {
-                            secInput.focus();
-                            setTimeout(() => {
-                                secInput.selectionStart = secInput.selectionEnd = secInput.value.length;
-                            }, 0);
-                        }
-                    });
-                }
+                    // Format and update immediately
+                    if (value.length === 0) {
+                        e.target.value = '';
+                        lastFormattedValue = '';
+                    } else {
+                        // Pad to 7 digits
+                        const padded = value.padStart(7, '0');
+                        
+                        // Format as mm:ss,mmm
+                        const formatted = padded.slice(0, 2) + ':' + padded.slice(2, 4) + ',' + padded.slice(4, 7);
+                        e.target.value = formatted;
+                        lastFormattedValue = formatted;
+                    }
+                });
+                
+                // Handle blur to ensure formatting
+                input.addEventListener('blur', function(e) {
+                    const value = e.target.value.replace(/[^0-9]/g, '');
+                    if (value.length > 0) {
+                        const padded = value.padStart(7, '0');
+                        const formatted = padded.slice(0, 2) + ':' + padded.slice(2, 4) + ',' + padded.slice(4, 7);
+                        e.target.value = formatted;
+                    }
+                });
+                
+                // Handle focus - select all for easy replacement
+                input.addEventListener('focus', function(e) {
+                    // Small delay to let mobile keyboard appear
+                    setTimeout(() => {
+                        e.target.select();
+                    }, 100);
+                });
+                
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                    const digits = pastedText.replace(/[^0-9]/g, '');
+                    
+                    if (digits.length > 0) {
+                        const value = digits.slice(0, 7);
+                        const padded = value.padStart(7, '0');
+                        const formatted = padded.slice(0, 2) + ':' + padded.slice(2, 4) + ',' + padded.slice(4, 7);
+                        e.target.value = formatted;
+                    }
+                });
             });
         }
 
@@ -2785,36 +2664,6 @@
         });
 
         // Handle Lap Time form submission
-        // Helper function to get time value from split inputs
-        function getSectorTimeValue(sectorId) {
-            // Get from split inputs
-            const secInput = document.getElementById(`${sectorId}-sec`);
-            const msInput = document.getElementById(`${sectorId}-ms`);
-            
-            if (!secInput || !msInput) {
-                return ''; // Return empty if inputs don't exist
-            }
-            
-            const seconds = secInput.value || '';
-            const milliseconds = msInput.value || '';
-            
-            // Validate that both fields have values
-            if (seconds === '' || milliseconds === '') {
-                return ''; // Return empty if incomplete
-            }
-            
-            // Pad values
-            const paddedSeconds = seconds.padStart(2, '0');
-            const paddedMilliseconds = milliseconds.padStart(3, '0');
-            
-            // Convert SS.mmm to mm:ss,mmm format
-            const totalSeconds = parseInt(paddedSeconds);
-            const minutes = Math.floor(totalSeconds / 60);
-            const remainingSeconds = totalSeconds % 60;
-            
-            return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')},${paddedMilliseconds}`;
-        }
-
         document.getElementById('lapTimeForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -2829,22 +2678,13 @@
             }
             
             const roundNumber = document.getElementById('roundNumber2').value;
-            const sector1 = getSectorTimeValue('sector1');
-            const sector2 = getSectorTimeValue('sector2');
-            const sector3 = getSectorTimeValue('sector3');
+            const sector1 = document.getElementById('sector1').value;
+            const sector2 = document.getElementById('sector2').value;
+            const sector3 = document.getElementById('sector3').value;
             
             const messageDiv = document.getElementById('lapTimeMessage');
             
-            // Check if any time is empty
-            if (!sector1 || !sector2 || !sector3) {
-                messageDiv.style.display = 'block';
-                messageDiv.style.background = '#f8d7da';
-                messageDiv.style.color = '#721c24';
-                messageDiv.textContent = '❌ Please fill in all sector times.';
-                return;
-            }
-            
-            // Validate format (should be mm:ss,mmm)
+            // Validate format
             const timePattern = /^\d{2}:\d{2},\d{3}$/;
             if (!timePattern.test(sector1) || !timePattern.test(sector2) || !timePattern.test(sector3)) {
                 messageDiv.style.display = 'block';
@@ -3045,35 +2885,22 @@
         });
 
         // Load Round Setup configurations with best times
-        //async function loadRoundSetupWithBestTimes() {
-        //    const timestamp = new Date().getTime();
-        //    const setupUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=734685847&single=true&output=csv&t=${timestamp}`;
-        //    const roundDataUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
-        //   const tracksUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=1346258272&single=true&output=csv';
-        //    const carsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=208034687&single=true&output=csv';
-            
-        //    try {
-                // Load all data in parallel
-        //        const [setupResponse, roundDataResponse, tracksResponse, carsResponse] = await Promise.all([
-        //            fetch(setupUrl, { cache: 'no-store' }),
-        //            fetch(roundDataUrl, { cache: 'no-store' }),
-        //            fetch(tracksUrl, { cache: 'no-store' }),
-        //            fetch(carsUrl, { cache: 'no-store' })
-        //        ]);
         async function loadRoundSetupWithBestTimes() {
-			const setupUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=734685847&single=true&output=csv';
-			const roundDataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv';
-			const tracksUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=1346258272&single=true&output=csv';
-			const carsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=208034687&single=true&output=csv';
-    
-			try {
-				// Load all data in parallel
-				const [setupResponse, roundDataResponse, tracksResponse, carsResponse] = await Promise.all([
-					fetchWithNoCache(setupUrl),
-					fetchWithNoCache(roundDataUrl),
-					fetchWithNoCache(tracksUrl),
-					fetchWithNoCache(carsUrl)
-				]);        
+            const timestamp = new Date().getTime();
+            const setupUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=734685847&single=true&output=csv&t=${timestamp}`;
+            const roundDataUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
+            const tracksUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=1346258272&single=true&output=csv';
+            const carsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=208034687&single=true&output=csv';
+            
+            try {
+                // Load all data in parallel
+                const [setupResponse, roundDataResponse, tracksResponse, carsResponse] = await Promise.all([
+                    fetch(setupUrl, { cache: 'no-store' }),
+                    fetch(roundDataUrl, { cache: 'no-store' }),
+                    fetch(tracksUrl, { cache: 'no-store' }),
+                    fetch(carsUrl, { cache: 'no-store' })
+                ]);
+                
                 const [setupCSV, roundDataCSV, tracksCSV, carsCSV] = await Promise.all([
                     setupResponse.text(),
                     roundDataResponse.text(),
@@ -3219,7 +3046,7 @@
                     card.innerHTML = `
                         <div class="round-card-header">
                             <h3>Round ${setup.round}</h3>
-                            <p class="season-number" style="margin: 5px 0 0 0; opacity: 0.9;">${setup.season}</p>
+                            <p style="margin: 5px 0 0 0; opacity: 0.9;">${setup.season}</p>
                         </div>
                         
                         <div class="round-card-images">
