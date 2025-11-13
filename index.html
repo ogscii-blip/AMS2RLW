@@ -1486,36 +1486,36 @@
 
         // Tab switching functionality
 	
-	//<script>
+	<script>
         // Tab switching functionality
-        //function showTab(tabName) {
+        function showTab(tabName) {
             // Hide all tabs
-        //    const tabs = document.querySelectorAll('.tab-content');
-        //    tabs.forEach(tab => tab.classList.remove('active'));
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
             
             // Remove active class from all buttons
-        //    const buttons = document.querySelectorAll('.tab-button');
-        //    buttons.forEach(btn => btn.classList.remove('active'));
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(btn => btn.classList.remove('active'));
             
             // Show selected tab
-        //    document.getElementById(tabName).classList.add('active');
+            document.getElementById(tabName).classList.add('active');
             
             // Add active class to clicked button
-        //    event.target.classList.add('active');
+            event.target.classList.add('active');
             
             // Load data if needed
-        //    if (tabName === 'overall') {
-        //        loadLeaderboard();
-        //    } else if (tabName === 'round') {
-        //        loadRoundData();
-        //    } else if (tabName === 'drivers') {
-        //        loadDriverStats();
-        //  } else if (tabName === 'profile') {
-        //        loadProfile();
-        //    } else if (tabName === 'setup') {
-        //        loadRoundSetup();
-        //    }
-        //}
+            if (tabName === 'overall') {
+                loadLeaderboard();
+            } else if (tabName === 'round') {
+                loadRoundData();
+            } else if (tabName === 'drivers') {
+                loadDriverStats();
+          } else if (tabName === 'profile') {
+                loadProfile();
+            } else if (tabName === 'setup') {
+                loadRoundSetup();
+            }
+        }
 		
 		
 		
