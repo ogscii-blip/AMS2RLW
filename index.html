@@ -43,6 +43,18 @@
             opacity: 0.9;
         }
 
+        .driver-link:hover,
+        .driver-link-round:hover {
+            text-decoration: underline;
+            color: #5568d3 !important;
+        }
+
+        @media screen and (max-width: 480px) {
+            #overall .leaderboard-table tr {
+                cursor: pointer;
+            }
+        }
+
         .tabs {
             display: flex;
             gap: 10px;
@@ -1479,6 +1491,71 @@
             }
         }
 
+        // Navigate to Round Results tab and expand the driver's latest round
+async function goToDriverCurrentRound(driverName) {
+    // First, switch to Round Results tab
+    showTab('round');
+    
+    // Highlight the Round Results tab button
+    const buttons = document.querySelectorAll('.tab-button');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    buttons[1].classList.add('active'); // Round Results is the 2nd button (index 1)
+    
+    // Wait a moment for the round data to load
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Find the driver's most recent round
+    const timestamp = new Date().getTime();
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8cRe4F2n1y-SIHYI4aDQmyo55Js6iqRNxxD4oTAQfReJ6V_KFrmGnEp5BEbnoOu99jNUlHJnrDRvE/pub?gid=585016653&single=true&output=csv&t=${timestamp}`;
+    
+    try {
+        const response = await fetch(sheetUrl, {
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache'
+            }
+        });
+        const csvText = await response.text();
+        
+        // Parse CSV
+        const rows = csvText.split('\n').slice(1);
+        const driverRounds = rows
+            .filter(row => row.trim())
+            .map(row => {
+                const cols = row.split(',');
+                return {
+                    round: cols[0],
+                    driver: cols[1]
+                };
+            })
+            .filter(row => row.driver === driverName);
+        
+        if (driverRounds.length > 0) {
+            // Get the latest round (assuming higher round number = more recent)
+            const latestRound = driverRounds.reduce((max, current) => {
+                const currentNum = parseInt(current.round.replace(/\D/g, '')) || 0;
+                const maxNum = parseInt(max.round.replace(/\D/g, '')) || 0;
+                return currentNum > maxNum ? current : max;
+            });
+            
+            // Expand that round
+            const roundId = latestRound.round;
+            const details = document.getElementById(`details-${roundId}`);
+            const icon = document.getElementById(`toggle-${roundId}`);
+            
+            if (details && icon) {
+                details.classList.add('expanded');
+                icon.classList.add('expanded');
+                
+                // Scroll to the expanded round
+                details.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+        } catch (error) {
+            console.error('Error finding driver round:', error);
+        }
+    }
+        
         // Load leaderboard data from Google Sheets
         async function loadLeaderboard() {
     // Add cache-busting parameter to force fresh data
@@ -1600,6 +1677,14 @@
                     <td data-label="Wins">${row.wins}</td>
                 `;
                 tbody.appendChild(tr);
+            });
+
+            // Add click handlers to all driver names
+            document.querySelectorAll('.driver-link').forEach(link => {
+                link.addEventListener('click', function() {
+                    const driverName = this.getAttribute('data-driver');
+                    goToDriverCurrentRound(driverName);
+                });
             });
             
             document.getElementById('leaderboard-loading').style.display = 'none';
@@ -1818,6 +1903,18 @@
             
             document.getElementById('round-loading').style.display = 'none';
             document.getElementById('round-content').style.display = 'block';
+
+            // After building all round tables, add click handlers
+            setTimeout(() => {
+                document.querySelectorAll('.driver-link-round').forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.stopPropagation(); // Prevent round toggle
+                        const driverName = this.getAttribute('data-driver');
+                        goToDriverCurrentRound(driverName);
+                    });
+                });
+            }, 100);
+            
         }
 
         // Load driver statistics
@@ -2461,6 +2558,19 @@
                 driverNameInput.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') {
                         login();
+                    }
+                });
+            }
+
+            if (window.innerWidth <= 480) {
+                document.getElementById('leaderboard-body').addEventListener('click', function(e) {
+                    const row = e.target.closest('tr');
+                    if (row) {
+                        const driverLink = row.querySelector('.driver-link');
+                        if (driverLink) {
+                            const driverName = driverLink.getAttribute('data-driver');
+                            goToDriverCurrentRound(driverName);
+                        }
                     }
                 });
             }
