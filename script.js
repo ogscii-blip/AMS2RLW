@@ -1,5 +1,5 @@
 /* =========================================================
-   Optimized script.js for AMS2 Racing League - v4.1
+   Optimized script.js for AMS2 Racing League - v5.1
    - Uses existing Firebase wrappers on window (ref/get/push/onValue/set)
    - Profiles keyed by username (Driver_Profiles/{username})
    - Season-aware leaderboard + round navigation
@@ -8,6 +8,15 @@
    - FIXED: Form reset, rounds completed logic, placeholder images
    - FIXED: Per-season calculations, tab visibility, descending sort
    - FIXED: Pre-select latest season WITH lap submissions only
+   - FIXED: Show initials and number badge when logged out (all sections, mobile-friendly)
+   - FIXED: Chart respects login status (no photos when logged out)
+   - FIXED: Chart mobile-responsive with proper aspect ratio
+   - FIXED: Chart starts at R0 with 0 points for all drivers
+   - FIXED: Avatar animation draws avatars at line tip (no pre-drawn lines)
+   - FIXED: Infinite loop crash prevented with proper animation flag
+   - NEW: Animated points progression graph with racing driver avatars
+   - NEW: Intersection Observer - chart animates only when scrolled into view
+   - NEW: Y-axis dynamically scales as data appears (zoom-out effect)
    ========================================================= */
 
 /* -----------------------------
@@ -306,6 +315,339 @@ function goToDriverProfile(driverName) {
 }
 
 /* -----------------------------
+   Points Progression Graph with Animated Driver Photos
+   ----------------------------- */
+let chartInstance = null; // Store chart instance globally
+let chartAnimationTriggered = false; // Track if animation has run
+
+function createPointsProgressionGraph(roundData, selectedSeason) {
+  const graphContainer = document.getElementById('points-progression-graph');
+  if (!graphContainer) return;
+
+  // Destroy previous chart if it exists
+  if (chartInstance) {
+    chartInstance.destroy();
+    chartInstance = null;
+  }
+  chartAnimationTriggered = false;
+
+  // Group data by driver and round to calculate cumulative points
+  const driverRounds = {};
+  const allRounds = new Set();
+
+  roundData.forEach(row => {
+    const driver = row.Driver;
+    const round = parseInt(row.Round) || 0;
+    const points = parseInt(row['Total_Points']) || 0;
+    
+    if (!driverRounds[driver]) driverRounds[driver] = {};
+    if (!driverRounds[driver][round]) driverRounds[driver][round] = 0;
+    driverRounds[driver][round] += points;
+    allRounds.add(round);
+  });
+
+  const sortedRounds = Array.from(allRounds).sort((a,b) => a - b);
+  if (sortedRounds.length === 0) {
+    graphContainer.style.display = 'none';
+    return;
+  }
+
+  // Calculate cumulative points for each driver at each round
+  const datasets = [];
+  const colors = ['#667eea', '#e74c3c', '#f39c12', '#2ecc71', '#9b59b6', '#1abc9c'];
+  let colorIndex = 0;
+
+  Object.keys(driverRounds).forEach(driver => {
+    const cumulativePoints = [0];
+    let total = 0;
+
+    sortedRounds.forEach(round => {
+      total += (driverRounds[driver][round] || 0);
+      cumulativePoints.push(total);
+    });
+
+    const profile = DRIVER_PROFILES[encodeKey(driver)] || {};
+    const driverColor = colors[colorIndex % colors.length];
+    colorIndex++;
+
+    const usePhoto = currentUser && profile.photoUrl;
+
+    datasets.push({
+      label: getFormattedDriverName(driver, false),
+      data: cumulativePoints,
+      borderColor: driverColor,
+      backgroundColor: driverColor + '33',
+      borderWidth: 0, // CHANGED: Hide Chart.js lines completely
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 0, // CHANGED: Also hide hover points
+      driverName: driver,
+      photoUrl: usePhoto ? normalizePhotoUrl(profile.photoUrl) : null,
+      driverNumber: profile.number || '?'
+    });
+  });
+
+  // Clear previous chart
+  graphContainer.innerHTML = '<canvas id="pointsChart"></canvas>';
+  const ctx = document.getElementById('pointsChart').getContext('2d');
+
+  // Create the chart without any lines or animation
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['R0', ...sortedRounds.map(r => `R${r}`)],
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: window.innerWidth <= 768 ? 1.2 : 2.5,
+      animation: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            usePointStyle: true,
+            padding: window.innerWidth <= 480 ? 8 : 15,
+            font: { 
+              size: window.innerWidth <= 480 ? 10 : 12, 
+              weight: 'bold' 
+            }
+          }
+        },
+        title: {
+          display: true,
+          text: selectedSeason ? `Season ${selectedSeason} Points Progression` : 'Overall Points Progression',
+          font: { 
+            size: window.innerWidth <= 480 ? 14 : 18, 
+            weight: 'bold' 
+          },
+          padding: window.innerWidth <= 480 ? 10 : 20
+        },
+        tooltip: {
+          enabled: false // CHANGED: Disable tooltips during animation
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: window.innerWidth > 480,
+            text: 'Total Points',
+            font: { size: 14, weight: 'bold' }
+          },
+          ticks: {
+            stepSize: 5,
+            font: { size: window.innerWidth <= 480 ? 10 : 12 }
+          }
+        },
+        x: {
+          title: {
+            display: window.innerWidth > 480,
+            text: 'Round',
+            font: { size: 14, weight: 'bold' }
+          },
+          ticks: {
+            font: { size: window.innerWidth <= 480 ? 10 : 12 }
+          }
+        }
+      },
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false
+      }
+    }
+  });
+
+  graphContainer.style.display = 'block';
+
+  // Use Intersection Observer to trigger animation only when visible
+  setupChartVisibilityObserver(graphContainer, sortedRounds);
+}
+function setupChartVisibilityObserver(graphContainer, rounds) {
+  if (graphContainer._observer) {
+    graphContainer._observer.disconnect();
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !chartAnimationTriggered) {
+        chartAnimationTriggered = true;
+        
+        if (chartInstance) {
+          // Start the animation
+          animateDriverAvatars(chartInstance, rounds);
+        }
+        
+        observer.disconnect();
+      }
+    });
+  }, {
+    threshold: 0.3,
+    rootMargin: '0px'
+  });
+
+  observer.observe(graphContainer);
+  graphContainer._observer = observer;
+}
+
+function animateDriverAvatars(chart, rounds) {
+  const canvas = chart.canvas;
+  const ctx = canvas.getContext('2d');
+  const avatarSize = 30;
+  const animationDuration = 2500;
+  const startTime = Date.now();
+
+  // Create avatar images
+  const avatars = chart.data.datasets.map(dataset => {
+    const img = new Image();
+    if (dataset.photoUrl) {
+      img.src = dataset.photoUrl;
+    }
+    return {
+      img: img,
+      loaded: false,
+      driverNumber: dataset.driverNumber,
+      color: dataset.borderColor,
+      hasPhoto: !!dataset.photoUrl
+    };
+  });
+
+  avatars.forEach((avatar, idx) => {
+    if (avatar.hasPhoto) {
+      avatar.img.onload = () => { avatar.loaded = true; };
+      avatar.img.onerror = () => { avatar.hasPhoto = false; };
+    }
+  });
+
+  function animate() {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / animationDuration, 1);
+    
+    const currentPositionFloat = progress * rounds.length;
+    const currentRoundIndex = Math.floor(currentPositionFloat);
+    const roundProgress = currentPositionFloat - currentRoundIndex;
+
+    // Redraw chart base (without lines)
+    chart.update('none');
+
+    // Draw our custom lines and avatars
+    chart.data.datasets.forEach((dataset, idx) => {
+      const avatar = avatars[idx];
+      const meta = chart.getDatasetMeta(idx);
+      if (!meta || !meta.data || meta.data.length === 0) return;
+
+      ctx.save();
+      
+      // Draw the line up to current progress
+      ctx.strokeStyle = dataset.borderColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      
+      for (let i = 0; i <= currentRoundIndex; i++) {
+        const point = meta.data[i];
+        if (!point) continue;
+        
+        const x = point.x;
+        const y = chart.scales.y.getPixelForValue(dataset.data[i]);
+        
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      
+      // Draw interpolated segment
+      if (currentRoundIndex < meta.data.length - 1 && roundProgress > 0) {
+        const currentPoint = meta.data[currentRoundIndex];
+        const nextPoint = meta.data[currentRoundIndex + 1];
+        
+        if (currentPoint && nextPoint) {
+          const currentY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
+          const nextY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex + 1]);
+          
+          const interpX = currentPoint.x + (nextPoint.x - currentPoint.x) * roundProgress;
+          const interpY = currentY + (nextY - currentY) * roundProgress;
+          
+          ctx.lineTo(interpX, interpY);
+        }
+      }
+      
+      ctx.stroke();
+      ctx.restore();
+
+      // Draw avatar at tip
+      const currentPoint = meta.data[currentRoundIndex];
+      const nextPoint = meta.data[currentRoundIndex + 1];
+      
+      if (!currentPoint) return;
+
+      let tipX, tipY;
+      if (nextPoint && roundProgress > 0) {
+        tipX = currentPoint.x + (nextPoint.x - currentPoint.x) * roundProgress;
+        const currentY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
+        const nextY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex + 1]);
+        tipY = currentY + (nextY - currentY) * roundProgress;
+      } else {
+        tipX = currentPoint.x;
+        tipY = chart.scales.y.getPixelForValue(dataset.data[currentRoundIndex]);
+      }
+
+      ctx.save();
+      
+      if (avatar.hasPhoto && avatar.loaded) {
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, avatarSize / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(avatar.img, tipX - avatarSize / 2, tipY - avatarSize / 2, avatarSize, avatarSize);
+        ctx.restore();
+        
+        ctx.save();
+        ctx.strokeStyle = avatar.color;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, avatarSize / 2, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      } else {
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, avatarSize / 2, 0, Math.PI * 2);
+        ctx.fillStyle = avatar.color;
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(avatar.driverNumber, tipX, tipY);
+      }
+      
+      ctx.restore();
+    });
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      // Animation complete - re-enable tooltips and restore full lines
+      chart.options.plugins.tooltip.enabled = true;
+      chart.data.datasets.forEach(dataset => {
+        dataset.borderWidth = 3;
+      });
+      chart.update('none');
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+/* -----------------------------
    Core: Leaderboard (season-aware)
    ----------------------------- */
 async function loadLeaderboard() {
@@ -384,6 +726,9 @@ async function loadLeaderboard() {
     
     const completedRounds = Object.values(roundSubmissions).filter(drivers => drivers.size >= 3).length;
     document.getElementById('totalRounds').textContent = completedRounds;
+
+    // FIXED: Create animated points progression graph
+    createPointsProgressionGraph(filteredRoundData, selectedSeason);
 
     // Populate season dropdowns from cached setup (but call populate if needed)
     populateSeasonFilter();
@@ -946,17 +1291,46 @@ async function loadDriverStats() {
       const profileKey = encodeKey(driverName);
       const profile = DRIVER_PROFILES[profileKey] || {};
 
-      const formattedName = profile && profile.surname ? `${profile.name} ${profile.surname}` : driverName;
-      const formattedShortName = profile && profile.surname ? `${profile.name.charAt(0)}. ${profile.surname}` : driverName;
+      // FIXED: Format names based on login status
+      let formattedName, formattedShortName;
+      if (currentUser && profile && profile.surname) {
+        formattedName = `${profile.name} ${profile.surname}`;
+        formattedShortName = `${profile.name.charAt(0)}. ${profile.surname}`;
+      } else if (!currentUser && profile && profile.surname) {
+        // Not logged in: show initials only
+        formattedName = `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
+        formattedShortName = `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
+      } else {
+        formattedName = driverName;
+        formattedShortName = driverName;
+      }
+      
       const championshipPosition = champPos[driverName] || 'N/A';
 
       // Build card
       const card = document.createElement('div'); card.className = 'driver-card'; card.setAttribute('data-driver', driverName);
-      const desktopPhotoHtml = profile && profile.photoUrl ? `<div class="driver-photo-container"><img src="${normalizePhotoUrl(profile.photoUrl)}" alt="${formattedName}" class="driver-photo"><div class="driver-number-badge">${profile.number||'?'}</div></div>` : '';
-      const mobilePhotoHtml = profile && profile.photoUrl ? `<div class="driver-photo-container-mobile"><img src="${normalizePhotoUrl(profile.photoUrl)}" alt="${formattedName}" class="driver-photo-mobile"><div class="driver-number-badge-mobile">${profile.number||'?'}</div></div>` : '';
+      
+      // FIXED: Show different content based on login status
+      let desktopPhotoHtml = '';
+      let mobilePhotoHtml = '';
+      
+      if (currentUser) {
+        // Logged in: show photo if available
+        desktopPhotoHtml = profile && profile.photoUrl 
+          ? `<div class="driver-photo-container"><img src="${normalizePhotoUrl(profile.photoUrl)}" alt="${formattedName}" class="driver-photo"><div class="driver-number-badge">${profile.number||'?'}</div></div>` 
+          : '';
+        mobilePhotoHtml = profile && profile.photoUrl 
+          ? `<div class="driver-photo-container-mobile"><img src="${normalizePhotoUrl(profile.photoUrl)}" alt="${formattedName}" class="driver-photo-mobile"><div class="driver-number-badge-mobile">${profile.number||'?'}</div></div>` 
+          : '';
+      } else {
+        // Not logged in: show number badge instead of photo
+        const driverNumber = profile && profile.number ? profile.number : '?';
+        desktopPhotoHtml = `<div class="driver-number-placeholder">${driverNumber}</div>`;
+        mobilePhotoHtml = `<div class="driver-number-placeholder-mobile">${driverNumber}</div>`;
+      }
 
       const trackCarRecordsHtml = trackCarRecordsArray.length ? trackCarRecordsArray.map(r=> `<div class="record-item"><span>${r.combo}</span><strong>${r.timeFormatted}</strong></div>`).join('') : '<p style="color:#999;text-align:center">No records yet</p>';
-      const h2hHtml = Object.entries(h2hRecords).length ? Object.entries(h2hRecords).map(([op,rec])=> `<div class="h2h-card"><div class="opponent">vs ${getFormattedDriverName(op)}</div><div class="record">${rec.wins}W - ${rec.losses}L</div></div>`).join('') : '<p style="color:#999;text-align:center">No head-to-head data yet</p>';
+      const h2hHtml = Object.entries(h2hRecords).length ? Object.entries(h2hRecords).map(([op,rec])=> `<div class="h2h-card"><div class="opponent">vs ${getFormattedDriverName(op, false)}</div><div class="record">${rec.wins}W - ${rec.losses}L</div></div>`).join('') : '<p style="color:#999;text-align:center">No head-to-head data yet</p>';
 
       card.innerHTML = `
         <div class="driver-header">${desktopPhotoHtml}<div class="driver-info"><h2>${formattedName}</h2><div class="driver-position">Championship Position: ${championshipPosition}</div></div></div>
@@ -1157,12 +1531,24 @@ document.getElementById('lapTimeForm')?.addEventListener('submit', async functio
 /* -----------------------------
    Login / Session handling
    ----------------------------- */
-function getFormattedDriverName(driverLoginName) {
+function getFormattedDriverName(driverLoginName, includeNumber = true) {
   // driverLoginName is the username used in ALLOWED_USERS
   const profile = DRIVER_PROFILES[encodeKey(driverLoginName)];
-  if (profile && profile.surname && profile.name) {
-    return `${profile.name.charAt(0)}. ${profile.surname} - ${profile.number || ''}`;
+  
+  // If logged in and profile exists with full info, show formatted name with number
+  if (currentUser && profile && profile.surname && profile.name) {
+    const number = profile.number || '?';
+    return includeNumber 
+      ? `${profile.name.charAt(0)}. ${profile.surname} - ${number}`
+      : `${profile.name.charAt(0)}. ${profile.surname}`;
   }
+  
+  // If NOT logged in but profile exists, show initials only
+  if (!currentUser && profile && profile.surname && profile.name) {
+    return `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
+  }
+  
+  // Fallback to username
   return driverLoginName;
 }
 
