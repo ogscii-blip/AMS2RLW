@@ -522,6 +522,39 @@ header p {
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
+.driver-number-placeholder {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4em;
+    font-weight: bold;
+    border: 5px solid #667eea;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.driver-number-placeholder-mobile {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    font-weight: bold;
+    border: 3px solid #667eea;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
 .driver-info h2 {
     margin: 0 0 10px 0;
     color: #2c3e50;
@@ -839,6 +872,10 @@ header p {
 
 /* Mobile responsive styles */
 @media screen and (max-width: 768px) {
+    #points-progression-graph {
+        padding: 20px !important;
+    }
+
     .round-header {
         grid-template-columns: 1fr;
         gap: 15px;
@@ -893,6 +930,18 @@ header p {
         border-bottom: 3px solid #667eea;
         margin-bottom: 20px;
     }
+
+    .driver-number-placeholder {
+        width: 100px;
+        height: 100px;
+        font-size: 2.5em;
+    }
+
+    .driver-number-placeholder-mobile {
+        width: 80px;
+        height: 80px;
+        font-size: 2em;
+    }
     
     .stats-grid-driver {
         grid-template-columns: repeat(2, 1fr);
@@ -919,6 +968,15 @@ header p {
 
     #subtitle {
         font-size: 1em !important;
+    }
+
+    #points-progression-graph {
+        padding: 15px !important;
+        margin-bottom: 20px !important;
+    }
+
+    #pointsChart {
+        max-height: 400px;
     }
 
     header h1 {
@@ -1184,5 +1242,17 @@ header p {
         flex-direction: column;
         gap: 8px;
         text-align: center;
+    }
+
+    .driver-number-placeholder {
+        width: 80px;
+        height: 80px;
+        font-size: 2em;
+    }
+
+    .driver-number-placeholder-mobile {
+        width: 70px;
+        height: 70px;
+        font-size: 1.8em;
     }
 }
