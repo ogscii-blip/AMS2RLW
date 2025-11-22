@@ -1,5 +1,5 @@
 /* =========================================================
-   Optimized script.js for AMS2 Racing League - v5.1
+   Optimized script.js for AMS2 Racing League - v5.2
    - Uses existing Firebase wrappers on window (ref/get/push/onValue/set)
    - Profiles keyed by username (Driver_Profiles/{username})
    - Season-aware leaderboard + round navigation
@@ -17,6 +17,9 @@
    - NEW: Animated points progression graph with racing driver avatars
    - NEW: Intersection Observer - chart animates only when scrolled into view
    - NEW: Y-axis dynamically scales as data appears (zoom-out effect)
+   - NEW: Race animation showing top 3 cars racing through sectors
+   - NEW: Smooth race animation with finish line carpets (gold/silver/bronze)
+   - NEW: Admin Tools for lap time management (edit/delete)
    ========================================================= */
 
 /* -----------------------------
@@ -110,6 +113,9 @@ async function loadConfig() {
 
       APPS_SCRIPT_URL = configMap['apps_script_url'];
 
+      // Set admin username
+      updateAdminUsername(configMap);
+
       // Build ALLOWED_USERS from config allowed_name_i, allowed_email_i, allowed_password_i
       const allowed = {};
       for (let i = 1; i <= 20; i++) {
@@ -201,7 +207,6 @@ function showTab(tabName, sourceButton = null) {
   if (tabName === 'overall') {
     loadLeaderboard();
   } else if (tabName === 'round') {
-    // FIXED: Pre-select current (latest) season in Round Results by default
     preSelectCurrentSeasonInRoundResults();
     loadRoundData();
   } else if (tabName === 'drivers') {
@@ -210,6 +215,8 @@ function showTab(tabName, sourceButton = null) {
     loadProfile();
   } else if (tabName === 'setup') {
     loadRoundSetup();
+  } else if (tabName === 'admin') {
+    loadAdminTools();
   }
 }
 
@@ -314,6 +321,14 @@ function goToDriverProfile(driverName) {
   }, 300);
 }
 
+function toggleRound(key) {
+  const details = document.getElementById(`details-${key}`);
+  const icon = document.getElementById(`toggle-${key}`);
+  if (!details) return;
+  details.classList.toggle('expanded');
+  if (icon) icon.classList.toggle('expanded');
+}
+
 /* -----------------------------
    Points Progression Graph with Animated Driver Photos
    ----------------------------- */
@@ -358,7 +373,7 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
   let colorIndex = 0;
 
   Object.keys(driverRounds).forEach(driver => {
-    const cumulativePoints = [0];
+    const cumulativePoints = [0]; // FIXED: Start with 0 points at R0
     let total = 0;
 
     sortedRounds.forEach(round => {
@@ -370,6 +385,7 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
     const driverColor = colors[colorIndex % colors.length];
     colorIndex++;
 
+    // FIXED: Only use photos if user is logged in
     const usePhoto = currentUser && profile.photoUrl;
 
     datasets.push({
@@ -395,14 +411,14 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
   chartInstance = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: ['R0', ...sortedRounds.map(r => `R${r}`)],
+      labels: ['R0', ...sortedRounds.map(r => `R${r}`)], // FIXED: Add R0 label
       datasets: datasets
     },
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      aspectRatio: window.innerWidth <= 768 ? 1.2 : 2.5,
-      animation: false,
+      aspectRatio: window.innerWidth <= 768 ? 1.2 : 2.5, // Mobile-friendly aspect ratio
+      animation: false, // Disable initial animation
       plugins: {
         legend: {
           display: true,
@@ -463,10 +479,12 @@ function createPointsProgressionGraph(roundData, selectedSeason) {
 
   graphContainer.style.display = 'block';
 
-  // Use Intersection Observer to trigger animation only when visible
+  // FIXED: Use Intersection Observer to trigger animation only when visible
   setupChartVisibilityObserver(graphContainer, sortedRounds);
 }
+
 function setupChartVisibilityObserver(graphContainer, rounds) {
+  // Remove any existing observer
   if (graphContainer._observer) {
     graphContainer._observer.disconnect();
   }
@@ -648,6 +666,655 @@ function animateDriverAvatars(chart, rounds) {
 }
 
 /* -----------------------------
+   Race Animation for Round Results
+   ----------------------------- */
+function createRaceAnimation(roundKey, results) {
+  // Only show top 3
+  const top3 = results.slice(0, 3);
+  if (top3.length === 0) return '';
+
+  const containerId = `race-animation-${roundKey}`;
+  const canvasId = `race-canvas-${roundKey}`;
+  const replayBtnId = `replay-${roundKey}`;
+
+  // Create HTML structure
+  const html = `
+    <div class="race-animation-container" id="${containerId}">
+      <div class="race-animation-header">
+        <h4>🏁 Race Replay - Top 3</h4>
+        <button class="replay-button" id="${replayBtnId}">↻ Replay</button>
+      </div>
+      <canvas id="${canvasId}" class="race-canvas"></canvas>
+    </div>
+  `;
+
+  // Schedule animation setup after DOM insertion
+  setTimeout(() => {
+    setupRaceAnimation(canvasId, replayBtnId, top3, roundKey);
+  }, 100);
+
+  return html;
+}
+
+function setupRaceAnimation(canvasId, replayBtnId, top3, roundKey) {
+  const canvas = document.getElementById(canvasId);
+  const replayBtn = document.getElementById(replayBtnId);
+  
+  if (!canvas || !replayBtn) return;
+
+  const ctx = canvas.getContext('2d');
+  let animationId = null;
+  let hasAnimated = false;
+  let isAnimating = false;
+
+  const resizeCanvas = () => {
+    const container = canvas.parentElement;
+    const rect = container.getBoundingClientRect();
+    canvas.style.width = '100%';
+    canvas.width = rect.width;
+    canvas.height = canvas.offsetHeight;
+    
+    if (isAnimating) {
+      cancelAnimationFrame(animationId);
+      startAnimation();
+    }
+  };
+  
+  resizeCanvas();
+
+  let resizeTimeout;
+  const handleResize = () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      resizeCanvas();
+    }, 100);
+  };
+
+  window.addEventListener('resize', handleResize);
+  window.addEventListener('orientationchange', () => {
+    setTimeout(resizeCanvas, 100);
+  });
+
+  const colors = ['#667eea', '#e74c3c', '#f39c12'];
+
+  const drivers = top3.map((result, idx) => {
+    const s1 = timeToSeconds(result.sector1);
+    const s2 = timeToSeconds(result.sector2);
+    const s3 = timeToSeconds(result.sector3);
+    const total = s1 + s2 + s3;
+
+    return {
+      name: result.driver,
+      position: result.position,
+      sector1: s1,
+      sector2: s2,
+      sector3: s3,
+      totalTime: total,
+      color: colors[idx],
+      currentSector: 0,
+      progress: 0,
+      finished: false,
+      finishTime: null,
+      lanePosition: 1 // Start in middle lane (0=top, 1=middle, 2=bottom)
+    };
+  });
+
+  const ANIMATION_DURATION = 4000;
+  
+  const getPositions = () => {
+    const startX = 80;
+    const finishX = canvas.width - 80;
+    const trackLength = finishX - startX;
+    
+    return {
+      startX,
+      finishX,
+      trackLength,
+      sector1End: startX + (trackLength / 3),
+      sector2End: startX + (2 * trackLength / 3)
+    };
+  };
+
+  const slowestTime = Math.max(...drivers.map(d => d.totalTime));
+
+function drawTrack() {
+  const { startX, finishX, sector1End, sector2End } = getPositions();
+  
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const laneHeight = canvas.height / 3;
+  ctx.strokeStyle = '#ddd';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([10, 5]);
+  for (let i = 1; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(startX, i * laneHeight);
+    ctx.lineTo(finishX, i * laneHeight);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.strokeStyle = '#bbb';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5, 5]);
+  
+  ctx.beginPath();
+  ctx.moveTo(sector1End, 0);
+  ctx.lineTo(sector1End, canvas.height);
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.moveTo(sector2End, 0);
+  ctx.lineTo(sector2End, canvas.height);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#999';
+  ctx.font = 'bold 12px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('S1', (startX + sector1End) / 2, 15);
+  ctx.fillText('S2', (sector1End + sector2End) / 2, 15);
+  ctx.fillText('S3', (sector2End + finishX) / 2, 15);
+  ctx.strokeStyle = '#2ecc71';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(startX, 0);
+  ctx.lineTo(startX, canvas.height);
+  ctx.stroke();
+  ctx.fillStyle = '#2ecc71';
+  ctx.font = 'bold 14px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('START', startX, canvas.height - 10);
+  
+  // DON'T PUT } HERE - THAT'S THE ERROR!
+  
+  // Draw checkered flag at finish line
+  drawCheckeredFlag(finishX);
+
+  // FINISH label - rotated 90deg clockwise, bigger, and centered
+  ctx.save();
+  ctx.translate(finishX, canvas.height / 2);
+  ctx.rotate(Math.PI / 2);
+  ctx.fillStyle = '#2c3e50';
+  ctx.font = 'bold 24px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('FINISH', 0, 0);
+  ctx.restore();
+} 
+
+function drawCheckeredFlag(x) {
+  const squareSize = 8;
+  const flagHeight = canvas.height;
+  const cols = 3;
+  const rows = Math.ceil(flagHeight / squareSize);
+
+  // Calculate the vertical range where "FINISH" text will be (center area)
+  const textAreaTop = (canvas.height / 2) - 40; // Give 40px above center
+  const textAreaBottom = (canvas.height / 2) + 40; // Give 40px below center
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const squareY = row * squareSize;
+      
+      // Skip drawing squares in the text area
+      if (squareY >= textAreaTop && squareY <= textAreaBottom) {
+        continue;
+      }
+      
+      const isBlack = (row + col) % 2 === 0;
+      ctx.fillStyle = isBlack ? '#2c3e50' : '#fff';
+      ctx.fillRect(
+        x - (cols * squareSize / 2) + (col * squareSize),
+        row * squareSize,
+        squareSize,
+        squareSize
+      );
+    }
+  }
+
+  // Draw border for top section
+  const topSectionHeight = Math.floor(textAreaTop / squareSize) * squareSize;
+  if (topSectionHeight > 0) {
+    ctx.strokeStyle = '#2c3e50';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      x - (cols * squareSize / 2),
+      0,
+      cols * squareSize,
+      topSectionHeight
+    );
+  }
+
+  // Draw border for bottom section
+  const bottomSectionStart = Math.ceil(textAreaBottom / squareSize) * squareSize;
+  const bottomSectionHeight = flagHeight - bottomSectionStart;
+  if (bottomSectionHeight > 0) {
+    ctx.strokeStyle = '#2c3e50';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      x - (cols * squareSize / 2),
+      bottomSectionStart,
+      cols * squareSize,
+      bottomSectionHeight
+    );
+  }
+}
+
+
+  function drawGlowingLane(startX, finishX, laneY, laneHeight, color) {
+    ctx.save();
+
+    const gradient = ctx.createLinearGradient(startX, 0, finishX, 0);
+    
+    const lightColor = hexToRgba(color, 0.1);
+    const mediumColor = hexToRgba(color, 0.2);
+    const strongColor = hexToRgba(color, 0.3);
+    
+    gradient.addColorStop(0, lightColor);
+    gradient.addColorStop(0.7, mediumColor);
+    gradient.addColorStop(1, strongColor);
+
+    ctx.fillStyle = gradient;
+    
+    const laneTop = laneY - laneHeight/2 + 5;
+    const stripHeight = laneHeight - 10;
+    
+    ctx.fillRect(startX, laneTop, finishX - startX, stripHeight);
+
+    ctx.restore();
+  }
+
+  function hexToRgba(hex, alpha) {
+    hex = hex.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  function drawFinishCarpet(finishX, laneY, finishPosition, driverColor) {
+    const carpetWidth = 35;
+    const carpetHeight = 25;
+    const carpetX = finishX - carpetWidth - 10;
+    const carpetY = laneY - carpetHeight / 2;
+
+    ctx.save();
+
+    let carpetBaseColor;
+    if (finishPosition === 1) {
+      carpetBaseColor = '#FFD700';
+    } else if (finishPosition === 2) {
+      carpetBaseColor = '#C0C0C0';
+    } else if (finishPosition === 3) {
+      carpetBaseColor = '#CD7F32';
+    }
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.fillRect(carpetX + 2, carpetY + 2, carpetWidth, carpetHeight);
+
+    const gradient = ctx.createLinearGradient(carpetX, carpetY, carpetX, carpetY + carpetHeight);
+    gradient.addColorStop(0, carpetBaseColor);
+    gradient.addColorStop(1, shadeColor(carpetBaseColor, -20));
+    ctx.fillStyle = gradient;
+    ctx.fillRect(carpetX, carpetY, carpetWidth, carpetHeight);
+
+    ctx.strokeStyle = driverColor;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(carpetX, carpetY, carpetWidth, carpetHeight);
+
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(carpetX + 3, carpetY + 3, carpetWidth - 6, carpetHeight - 6);
+
+    ctx.fillStyle = '#2c3e50';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    const ordinal = finishPosition === 1 ? 'st' : finishPosition === 2 ? 'nd' : 'rd';
+    ctx.fillText(`${finishPosition}${ordinal}`, carpetX + carpetWidth / 2, carpetY + carpetHeight / 2);
+
+    if (finishPosition === 1) {
+      drawSparkles(carpetX + carpetWidth / 2, carpetY + carpetHeight / 2, carpetWidth);
+    }
+
+    ctx.restore();
+  }
+
+  function shadeColor(color, percent) {
+    const num = parseInt(color.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = (num >> 16) + amt;
+    const G = (num >> 8 & 0x00FF) + amt;
+    const B = (num & 0x0000FF) + amt;
+    return '#' + (
+      0x1000000 +
+      (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+      (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+      (B < 255 ? (B < 1 ? 0 : B) : 255)
+    ).toString(16).slice(1);
+  }
+
+  function drawSparkles(x, y, size) {
+    const sparkleCount = 4;
+    const sparkleSize = 3;
+    const sparkleDistance = size / 2 + 5;
+    
+    ctx.fillStyle = '#FFD700';
+    
+    for (let i = 0; i < sparkleCount; i++) {
+      const angle = (Math.PI * 2 / sparkleCount) * i + (Date.now() / 500);
+      const sx = x + Math.cos(angle) * sparkleDistance;
+      const sy = y + Math.sin(angle) * sparkleDistance;
+      
+      ctx.beginPath();
+      for (let j = 0; j < 5; j++) {
+        const starAngle = (Math.PI * 2 / 5) * j + angle;
+        const radius = j % 2 === 0 ? sparkleSize : sparkleSize / 2;
+        const px = sx + Math.cos(starAngle) * radius;
+        const py = sy + Math.sin(starAngle) * radius;
+        if (j === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  function drawCar(x, y, color, driverName, position) {
+    const carWidth = 50;
+    const carHeight = 18;
+
+    ctx.save();
+
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x - carWidth/2 + 5, y - carHeight/2);
+    ctx.lineTo(x + carWidth/2 - 3, y - carHeight/2);
+    ctx.quadraticCurveTo(x + carWidth/2, y - carHeight/2, x + carWidth/2, y - carHeight/2 + 3);
+    ctx.lineTo(x + carWidth/2, y + carHeight/2 - 3);
+    ctx.quadraticCurveTo(x + carWidth/2, y + carHeight/2, x + carWidth/2 - 3, y + carHeight/2);
+    ctx.lineTo(x - carWidth/2 + 5, y + carHeight/2);
+    ctx.quadraticCurveTo(x - carWidth/2 + 2, y + carHeight/2, x - carWidth/2 + 2, y + carHeight/2 - 3);
+    ctx.lineTo(x - carWidth/2 + 2, y - carHeight/2 + 3);
+    ctx.quadraticCurveTo(x - carWidth/2 + 2, y - carHeight/2, x - carWidth/2 + 5, y - carHeight/2);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.beginPath();
+    ctx.ellipse(x + carWidth/6, y, carWidth/4, carHeight/3, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(x + carWidth/2, y - carHeight/2 - 2);
+    ctx.lineTo(x + carWidth/2 + 5, y - carHeight/2 - 1);
+    ctx.lineTo(x + carWidth/2 + 5, y + carHeight/2 + 1);
+    ctx.lineTo(x + carWidth/2, y + carHeight/2 + 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(x - carWidth/2 + 2, y - carHeight/2 - 3);
+    ctx.lineTo(x - carWidth/2 - 3, y - carHeight/2 - 2);
+    ctx.lineTo(x - carWidth/2 - 3, y + carHeight/2 + 2);
+    ctx.lineTo(x - carWidth/2 + 2, y + carHeight/2 + 3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = '#1a1a1a';
+    const wheelRadius = 4;
+    const wheelOffset = carWidth/3;
+    
+    ctx.beginPath();
+    ctx.arc(x + wheelOffset, y - carHeight/2 - 1, wheelRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + wheelOffset, y + carHeight/2 + 1, wheelRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(x - wheelOffset, y - carHeight/2 - 1, wheelRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x - wheelOffset, y + carHeight/2 + 1, wheelRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
+    const rimRadius = 2;
+    ctx.beginPath();
+    ctx.arc(x + wheelOffset, y - carHeight/2 - 1, rimRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + wheelOffset, y + carHeight/2 + 1, rimRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x - wheelOffset, y - carHeight/2 - 1, rimRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x - wheelOffset, y + carHeight/2 + 1, rimRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x - carWidth/2 + 8, y - 2);
+    ctx.lineTo(x + carWidth/2 - 5, y - 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - carWidth/2 + 8, y + 2);
+    ctx.lineTo(x + carWidth/2 - 5, y + 2);
+    ctx.stroke();
+
+    ctx.restore();
+
+    ctx.fillStyle = '#2c3e50';
+    ctx.font = 'bold 11px Arial';
+    ctx.textAlign = 'left';
+    const profile = DRIVER_PROFILES[encodeKey(driverName)] || {};
+    
+    let displayName;
+    if (currentUser && profile.name && profile.surname) {
+      displayName = `${profile.name.charAt(0)}. ${profile.surname}`;
+    } else if (profile.name && profile.surname) {
+      displayName = `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
+    } else {
+      displayName = driverName;
+    }
+    
+    ctx.fillText(`P${position} ${displayName}`, x + carWidth/2 + 8, y + 4);
+  }
+
+  // Calculate cumulative times at each sector end for sorting
+  function getCumulativeTime(driver, elapsedRealTime) {
+    if (elapsedRealTime <= driver.sector1) {
+      return elapsedRealTime;
+    } else if (elapsedRealTime <= driver.sector1 + driver.sector2) {
+      return elapsedRealTime;
+    } else {
+      return elapsedRealTime;
+    }
+  }
+
+function animate() {
+  const { startX, finishX, sector1End, sector2End } = getPositions();
+  
+  const now = Date.now();
+  const elapsed = now - startTime;
+  
+  // Slow down the last 20% of the race for dramatic effect
+  let adjustedProgress;
+  if (elapsed / ANIMATION_DURATION < 0.8) {
+    adjustedProgress = (elapsed / ANIMATION_DURATION) / 0.8 * 0.8;
+  } else {
+    const remainingProgress = (elapsed / ANIMATION_DURATION - 0.8) / 0.2;
+    adjustedProgress = 0.8 + (remainingProgress * 0.5 * 0.2);
+  }
+  
+  const progress = Math.min(adjustedProgress, 1);
+
+  drawTrack();
+
+  const laneHeight = canvas.height / 3;
+  let finishOrder = [];
+
+  const trackLength = finishX - startX;
+  
+  // Calculate each driver's position
+  const driverStates = drivers.map((driver, idx) => {
+    // Calculate overall progress for this driver (faster drivers finish earlier)
+    const timeRatio = driver.totalTime / slowestTime;
+    const driverProgress = Math.min(progress / timeRatio, 1);
+    
+    // Simple linear position for visual
+    let x = startX + (trackLength * driverProgress);
+    let finished = false;
+    
+    if (driverProgress >= 1) {
+      x = finishX;
+      finished = true;
+      
+      if (!driver.finished) {
+        driver.finished = true;
+        driver.finishTime = now;
+      }
+    }
+
+    if (driver.finished) {
+      finishOrder.push({ driver, idx, finishTime: driver.finishTime });
+    }
+
+    // For ranking: calculate which drivers have completed each sector based on their times
+    // Use actual sector times to determine ranking
+    let rankingScore = 0;
+    
+    // Figure out where we are in the overall race
+    const fastestS1 = Math.min(...drivers.map(d => d.sector1));
+    const fastestS1S2 = Math.min(...drivers.map(d => d.sector1 + d.sector2));
+    const fastestTotal = Math.min(...drivers.map(d => d.totalTime));
+    
+    // Determine race phase based on fastest driver
+    const globalElapsed = progress * fastestTotal;
+    
+    if (globalElapsed < fastestS1) {
+      // Phase 1: Everyone in S1, rank by S1 time (lower is better)
+      rankingScore = driver.sector1;
+    } else if (globalElapsed < fastestS1S2) {
+      // Phase 2: Best drivers in S2, rank by S1+S2 cumulative (lower is better)
+      rankingScore = driver.sector1 + driver.sector2;
+    } else {
+      // Phase 3: In S3, rank by total time (lower is better)
+      rankingScore = driver.totalTime;
+    }
+
+    return {
+      driver,
+      idx,
+      x,
+      xProgress: driverProgress,
+      rankingScore, // Lower is better
+      finished: driver.finished
+    };
+  });
+
+  // Sort by ranking score (LOWER is better = ahead = top lane)
+  driverStates.sort((a, b) => {
+    if (Math.abs(a.rankingScore - b.rankingScore) > 0.001) {
+      return a.rankingScore - b.rankingScore;
+    }
+    return a.idx - b.idx; // Stable sort by original position
+  });
+
+  // Assign lanes with smooth transitions
+  driverStates.forEach((state, position) => {
+    state.targetLane = position;
+    
+    const currentLane = state.driver.lanePosition;
+    const laneChangeSpeed = 0.01;
+    
+    if (Math.abs(currentLane - state.targetLane) < 0.01) {
+      state.driver.lanePosition = state.targetLane;
+    } else if (currentLane < state.targetLane) {
+      state.driver.lanePosition = Math.min(currentLane + laneChangeSpeed, state.targetLane);
+    } else if (currentLane > state.targetLane) {
+      state.driver.lanePosition = Math.max(currentLane - laneChangeSpeed, state.targetLane);
+    }
+  });
+
+  // Draw glowing lanes for finished drivers
+  driverStates.forEach(state => {
+    if (state.finished) {
+      const laneY = (state.driver.lanePosition + 0.5) * laneHeight;
+      drawGlowingLane(startX, finishX, laneY, laneHeight, state.driver.color);
+    }
+  });
+
+  // Draw cars
+  driverStates.forEach(state => {
+    const laneY = (state.driver.lanePosition + 0.5) * laneHeight;
+    drawCar(state.x, laneY, state.driver.color, state.driver.name, state.driver.position);
+  });
+
+  // Draw finish carpets
+  if (finishOrder.length > 0) {
+    finishOrder.sort((a, b) => a.finishTime - b.finishTime);
+    finishOrder.forEach((item, finishPos) => {
+      const laneY = (item.driver.lanePosition + 0.5) * laneHeight;
+      drawFinishCarpet(finishX, laneY, finishPos + 1, item.driver.color);
+    });
+  }
+
+  if (progress < 1) {
+    animationId = requestAnimationFrame(animate);
+  } else {
+    isAnimating = false;
+  }
+}
+
+
+  let startTime;
+
+ function startAnimation() {
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+  }
+  
+  drivers.forEach(d => {
+    d.progress = 0;
+    d.finished = false;
+    d.finishTime = null;
+    d.lanePosition = 1; // Reset ALL cars to middle lane at start
+  });
+
+  isAnimating = true;
+  startTime = Date.now();
+  animationId = requestAnimationFrame(animate);
+}
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !hasAnimated) {
+        hasAnimated = true;
+        setTimeout(() => startAnimation(), 300);
+      }
+    });
+  }, {
+    threshold: 0.3
+  });
+
+  observer.observe(canvas);
+
+  replayBtn.addEventListener('click', () => {
+    hasAnimated = true;
+    startAnimation();
+  });
+}
+
+/* -----------------------------
    Core: Leaderboard (season-aware)
    ----------------------------- */
 async function loadLeaderboard() {
@@ -655,7 +1322,6 @@ async function loadLeaderboard() {
     const seasonSelect = document.getElementById('seasonSelect');
     const selectedSeason = seasonSelect?.value || '';
 
-    // FIXED: Load Round_Data to calculate points accurately per season
     const [roundDataSnapshot, rawLapsSnapshot] = await Promise.all([
       window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Round_Data')),
       window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_1'))
@@ -664,12 +1330,10 @@ async function loadLeaderboard() {
     const roundData = toArray(roundDataSnapshot.val()).filter(r => r && r.Driver);
     const rawLapsData = toArray(rawLapsSnapshot.val()).filter(r => r && r.Driver);
 
-    // Filter Round_Data by season
     const filteredRoundData = selectedSeason 
       ? roundData.filter(r => String(r.Season) == String(selectedSeason))
       : roundData;
 
-    // FIXED: Calculate driver totals from Round_Data (actual scored rounds)
     const driverMap = {};
     
     filteredRoundData.forEach(row => {
@@ -682,7 +1346,6 @@ async function loadLeaderboard() {
       if (parseInt(row.Position) === 1) driverMap[name].wins += 1;
     });
 
-    // FIXED: Include drivers who have submitted laps but may not be in Round_Data yet
     const filteredLaps = selectedSeason 
       ? rawLapsData.filter(r => String(r.Season) == String(selectedSeason))
       : rawLapsData;
@@ -700,7 +1363,6 @@ async function loadLeaderboard() {
       return b.purpleSectors - a.purpleSectors;
     });
 
-    // Attach ranks
     const displayData = driversArr.map((d,i)=>({
       position: i+1,
       driver: d.driver,
@@ -711,12 +1373,10 @@ async function loadLeaderboard() {
 
     displayLeaderboard(displayData);
 
-    // Cards - use filtered data
     document.getElementById('totalDrivers').textContent = displayData.length;
     const totalPoints = displayData.reduce((s,d)=>s + (d.points||0), 0);
     document.getElementById('totalPoints').textContent = totalPoints;
 
-    // FIXED: Rounds completed - count rounds with 3+ submissions (completed rounds)
     const roundSubmissions = {};
     filteredLaps.forEach(lap => {
       const key = `S${lap.Season}-R${lap.Round}`;
@@ -727,16 +1387,16 @@ async function loadLeaderboard() {
     const completedRounds = Object.values(roundSubmissions).filter(drivers => drivers.size >= 3).length;
     document.getElementById('totalRounds').textContent = completedRounds;
 
-    // FIXED: Create animated points progression graph
     createPointsProgressionGraph(filteredRoundData, selectedSeason);
 
-    // Populate season dropdowns from cached setup (but call populate if needed)
     populateSeasonFilter();
 
   } catch (err) {
     console.error('loadLeaderboard error', err);
   }
 }
+
+
 
 function displayLeaderboard(data) {
   const tbody = document.getElementById('leaderboard-body');
@@ -765,7 +1425,6 @@ function displayLeaderboard(data) {
 
   tbody.appendChild(frag);
 
-  // Add click listeners
   tbody.querySelectorAll('.driver-link').forEach(link=>{
     link.addEventListener('click', function(e){
       const driverName = this.getAttribute('data-driver');
@@ -782,7 +1441,6 @@ function displayLeaderboard(data) {
    ----------------------------- */
 async function populateSeasonFilter() {
   try {
-    // Use cached setup if present
     if (!CACHE.setupArray) {
       const setupRef = window.firebaseRef(window.firebaseDB, 'Form_responses_2');
       const snap = await window.firebaseGet(setupRef);
@@ -822,7 +1480,6 @@ async function populateSeasonFilter() {
    ----------------------------- */
 async function loadRoundData() {
   try {
-    // Load once and cache heavy objects
     if (!CACHE.roundDataArray || !CACHE.tracksMap || !CACHE.carsMap || !CACHE.setupArray) {
       const [roundSnapshot, tracksSnapshot, carsSnapshot, setupSnapshot] = await Promise.all([
         window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Round_Data')),
@@ -848,7 +1505,6 @@ async function loadRoundData() {
     const roundSeasonSelect = document.getElementById('roundSeasonSelect');
     const selectedSeason = roundSeasonSelect?.value || '';
 
-    // Build filtered and normalized allData array
     let filtered = roundDataRaw.filter(r => r && r.Driver && r.Position);
     if (selectedSeason) filtered = filtered.filter(r => String(r.Season) == String(selectedSeason));
 
@@ -880,7 +1536,6 @@ async function loadRoundData() {
       };
     });
 
-    // Group by S{season}-R{round}
     const roundGroups = {};
     allData.forEach(r => {
       const key = `S${r.season}-R${r.round}`;
@@ -888,7 +1543,6 @@ async function loadRoundData() {
       roundGroups[key].results.push(r);
     });
 
-    // Determine fastest sectors & sort results for each group
     Object.keys(roundGroups).forEach(key => {
       const rs = roundGroups[key].results;
       const fastest1 = Math.min(...rs.map(r => parseFloat(r.sector1) || Infinity));
@@ -921,12 +1575,11 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
   const fallbackTrackImage = 'https://static.vecteezy.com/system/resources/previews/015/114/628/non_2x/race-track-icon-isometric-road-circuit-vector.jpg';
   const fallbackCarImage = 'https://thumb.silhouette-ac.com/t/e9/e9f1eb16ae292f36be10def00d95ecbb_t.jpeg';
 
-  // FIXED: Sort rounds in DESCENDING order (latest first)
   const sortedKeys = Object.keys(roundGroups).sort((a,b) => {
     const [sa, ra] = a.replace('S','').split('-R').map(Number);
     const [sb, rb] = b.replace('S','').split('-R').map(Number);
-    if (sa !== sb) return sb - sa; // Descending by season
-    return rb - ra; // Descending by round
+    if (sa !== sb) return sb - sa;
+    return rb - ra;
   });
 
   sortedKeys.forEach(key => {
@@ -978,12 +1631,14 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
       <thead>
         <tr>
           <th>Driver</th><th>Sector 1</th><th>Sector 2</th><th>Sector 3</th>
-          <th>Total Time</th><th>Position</th><th>Purple Sectors</th><th>Points</th>
+          <th>Total Time</th><th>Gap</th><th>Position</th><th>Purple Sectors</th><th>Points</th>
         </tr>
       </thead>
       <tbody></tbody>
     `;
     const tbody = table.querySelector('tbody');
+
+    const winnerTime = results.length > 0 ? timeToSeconds(results[0].totalTime) : 0;
 
     results.forEach(row => {
       const tr = document.createElement('tr');
@@ -997,12 +1652,26 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
 
       const formattedName = getFormattedDriverName(row.driver);
 
+      let gapHtml = '';
+      if (row.position === 1) {
+        gapHtml = '<span style="color:#2ecc71;font-weight:bold;">Interval</span>';
+      } else {
+        const driverTime = timeToSeconds(row.totalTime);
+        const gap = driverTime - winnerTime;
+        if (gap > 0 && isFinite(gap)) {
+          gapHtml = `<span style="color:#e74c3c;">+${gap.toFixed(3)}s</span>`;
+        } else {
+          gapHtml = '-';
+        }
+      }
+
       tr.innerHTML = `
         <td data-label="Driver"><strong class="driver-link-round" data-driver="${row.driver}" style="cursor:pointer;color:#667eea">${formattedName}</strong></td>
         <td data-label="Sector 1">${sector1Html}</td>
         <td data-label="Sector 2">${sector2Html}</td>
         <td data-label="Sector 3">${sector3Html}</td>
         <td data-label="Total Time"><strong>${formatTime(row.totalTime)}</strong></td>
+        <td data-label="Gap">${gapHtml}</td>
         <td data-label="Position">${row.position}</td>
         <td data-label="Purple Sectors">${row.purpleSectors}</td>
         <td data-label="Points"><strong>${row.points}</strong></td>
@@ -1011,6 +1680,14 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
     });
 
     details.appendChild(table);
+
+    const raceAnimationHtml = createRaceAnimation(key, results);
+    if (raceAnimationHtml) {
+      const raceDiv = document.createElement('div');
+      raceDiv.innerHTML = raceAnimationHtml;
+      details.appendChild(raceDiv.firstElementChild);
+    }
+
     roundDiv.appendChild(header);
     roundDiv.appendChild(details);
     frag.appendChild(roundDiv);
@@ -1018,17 +1695,15 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
 
   container.appendChild(frag);
 
-  // Add driver link click handlers
   container.querySelectorAll('.driver-link-round').forEach(link => {
     link.addEventListener('click', function() {
       goToDriverProfile(this.getAttribute('data-driver'));
     });
   });
 
-  // FIXED: Auto-expand the FIRST round (which is the latest due to descending sort)
   if (sortedKeys.length > 0) {
     setTimeout(() => {
-      const latestKey = sortedKeys[0]; // First in list is now the latest
+      const latestKey = sortedKeys[0];
       const d = document.getElementById(`details-${latestKey}`);
       const i = document.getElementById(`toggle-${latestKey}`);
       if (d) d.classList.add('expanded');
@@ -1040,19 +1715,10 @@ function displayRoundData(roundGroups, tracksMap, carsMap) {
   document.getElementById('round-content').style.display = 'block';
 }
 
-function toggleRound(key) {
-  const details = document.getElementById(`details-${key}`);
-  const icon = document.getElementById(`toggle-${key}`);
-  if (!details) return;
-  details.classList.toggle('expanded');
-  if (icon) icon.classList.toggle('expanded');
-}
-
 /* -----------------------------
    Round Setup & Cards
    ----------------------------- */
 async function loadTracksAndCars() {
-  // Ensure caches exist
   if (!CACHE.tracksMap || !CACHE.carsMap) {
     const [tracksSnap, carsSnap] = await Promise.all([
       window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Tracks')),
@@ -1064,7 +1730,6 @@ async function loadTracksAndCars() {
     CACHE.carsMap = {}; cars.forEach(r=> { if (r && r['Car_Name']) CACHE.carsMap[r['Car_Name'].trim()] = r['Car_Image_URL'] || ''; });
   }
 
-  // Populate selects
   const trackSelect = document.getElementById('trackLayout');
   const carSelect = document.getElementById('carName');
   if (trackSelect) {
@@ -1097,7 +1762,6 @@ document.getElementById('roundSetupForm')?.addEventListener('submit', async func
     await window.firebasePush(setupRef, setupData);
     messageDiv.style.background = '#d4edda'; messageDiv.style.color = '#155724'; messageDiv.textContent = '✅ Round configuration saved!';
     document.getElementById('roundSetupForm').reset();
-    // Invalidate cache so populateSeasonFilter picks it up
     CACHE.setupArray = null;
     await wait(350);
     loadRoundSetup();
@@ -1117,7 +1781,6 @@ async function loadRoundSetup() {
     const setupArr = toArray(setupSnap.val());
     const roundArr = toArray(roundSnap.val());
 
-    // Create unique latest setup per season/round
     const unique = {};
     setupArr.forEach(row => {
       if (!row || !row.Round_Number) return;
@@ -1130,12 +1793,284 @@ async function loadRoundSetup() {
     displayRoundCards(finalSetup, roundArr, CACHE.tracksMap || {}, CACHE.carsMap || {});
     document.getElementById('setup-cards-loading').style.display = 'none';
     document.getElementById('setup-cards-content').style.display = 'block';
-    // update cached setup
     CACHE.setupArray = setupArr;
     populateSeasonFilter();
 
   } catch (err) {
     console.error('loadRoundSetup error', err);
+  }
+}
+
+/* -----------------------------
+   Admin Tools - Lap Time Management
+   ----------------------------- */
+let ADMIN_USERNAME = null;
+
+function isAdmin() {
+  return currentUser && ADMIN_USERNAME && currentUser.name === ADMIN_USERNAME;
+}
+
+function updateAdminUsername(configMap) {
+  ADMIN_USERNAME = configMap['admin_username'] || null;
+  console.log('Admin username set to:', ADMIN_USERNAME);
+  console.log('Current user:', currentUser);
+  console.log('Is admin?', isAdmin());
+  updateAdminTabVisibility();
+}
+
+function updateAdminTabVisibility() {
+  const adminTab = document.querySelector('.tab-button[onclick*="admin"]');
+  if (adminTab) {
+    adminTab.style.display = isAdmin() ? '' : 'none';
+  }
+}
+
+async function loadAdminTools() {
+  if (!isAdmin()) {
+    document.getElementById('admin-content').innerHTML = '<p style="text-align:center;padding:40px;color:#666;">Access Denied</p>';
+    return;
+  }
+
+  try {
+    const lapsSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_1'));
+    const lapsData = toArray(lapsSnapshot.val());
+    
+    const lapsWithKeys = [];
+    const lapsObject = lapsSnapshot.val();
+    if (lapsObject && typeof lapsObject === 'object') {
+      Object.keys(lapsObject).forEach(key => {
+        if (lapsObject[key]) {
+          lapsWithKeys.push({ ...lapsObject[key], _firebaseKey: key });
+        }
+      });
+    }
+
+    displayAdminLapTimes(lapsWithKeys);
+
+  } catch (err) {
+    console.error('loadAdminTools error', err);
+  }
+}
+
+function displayAdminLapTimes(lapsData) {
+  const container = document.getElementById('admin-lap-times-table');
+  if (!container) return;
+
+  const drivers = [...new Set(lapsData.map(l => l.Driver).filter(Boolean))].sort();
+  const seasons = [...new Set(lapsData.map(l => l.Season).filter(Boolean))].sort((a,b) => b-a);
+  const rounds = [...new Set(lapsData.map(l => l.Round).filter(Boolean))].sort((a,b) => a-b);
+
+  const filterHtml = `
+    <div class="admin-filters">
+      <select id="adminFilterDriver" class="admin-filter-select">
+        <option value="">All Drivers</option>
+        ${drivers.map(d => `<option value="${d}">${d}</option>`).join('')}
+      </select>
+      <select id="adminFilterSeason" class="admin-filter-select">
+        <option value="">All Seasons</option>
+        ${seasons.map(s => `<option value="${s}">Season ${s}</option>`).join('')}
+      </select>
+      <select id="adminFilterRound" class="admin-filter-select">
+        <option value="">All Rounds</option>
+        ${rounds.map(r => `<option value="${r}">Round ${r}</option>`).join('')}
+      </select>
+      <button onclick="filterAdminLaps()" class="admin-filter-btn">Apply Filters</button>
+      <button onclick="clearAdminFilters()" class="admin-filter-btn">Clear</button>
+    </div>
+  `;
+
+  lapsData.sort((a, b) => {
+    const timeA = new Date(a.Timestamp).getTime();
+    const timeB = new Date(b.Timestamp).getTime();
+    return timeB - timeA;
+  });
+
+  const tableHtml = `
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Driver</th>
+          <th>Season</th>
+          <th>Round</th>
+          <th>Sector 1</th>
+          <th>Sector 2</th>
+          <th>Sector 3</th>
+          <th>Total Time</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="adminLapsTableBody">
+        ${lapsData.map(lap => createAdminLapRow(lap)).join('')}
+      </tbody>
+    </table>
+  `;
+
+  container.innerHTML = filterHtml + tableHtml;
+
+  window.adminLapsData = lapsData;
+}
+
+function createAdminLapRow(lap) {
+  const timestamp = new Date(lap.Timestamp).toLocaleString();
+  const s1 = formatTime(lap.Sector_1);
+  const s2 = formatTime(lap.Sector_2);
+  const s3 = formatTime(lap.Sector_3);
+  const total = formatTime(lap.Total_Lap_Time);
+
+  return `
+    <tr data-key="${lap._firebaseKey}">
+      <td data-label="Timestamp">${timestamp}</td>
+      <td data-label="Driver">${lap.Driver}</td>
+      <td data-label="Season">${lap.Season}</td>
+      <td data-label="Round">${lap.Round}</td>
+      <td data-label="Sector 1">${s1}</td>
+      <td data-label="Sector 2">${s2}</td>
+      <td data-label="Sector 3">${s3}</td>
+      <td data-label="Total Time">${total}</td>
+      <td data-label="Actions">
+        <button onclick="editAdminLap('${lap._firebaseKey}')" class="admin-btn-edit">✏️ Edit</button>
+        <button onclick="deleteAdminLap('${lap._firebaseKey}')" class="admin-btn-delete">🗑️ Delete</button>
+      </td>
+    </tr>
+  `;
+}
+
+function filterAdminLaps() {
+  const driverFilter = document.getElementById('adminFilterDriver').value;
+  const seasonFilter = document.getElementById('adminFilterSeason').value;
+  const roundFilter = document.getElementById('adminFilterRound').value;
+
+  let filtered = window.adminLapsData || [];
+
+  if (driverFilter) filtered = filtered.filter(l => l.Driver === driverFilter);
+  if (seasonFilter) filtered = filtered.filter(l => String(l.Season) === seasonFilter);
+  if (roundFilter) filtered = filtered.filter(l => String(l.Round) === roundFilter);
+
+  const tbody = document.getElementById('adminLapsTableBody');
+  if (tbody) {
+    tbody.innerHTML = filtered.map(lap => createAdminLapRow(lap)).join('');
+  }
+}
+
+function clearAdminFilters() {
+  document.getElementById('adminFilterDriver').value = '';
+  document.getElementById('adminFilterSeason').value = '';
+  document.getElementById('adminFilterRound').value = '';
+  filterAdminLaps();
+}
+
+async function editAdminLap(firebaseKey) {
+  const lap = window.adminLapsData.find(l => l._firebaseKey === firebaseKey);
+  if (!lap) return;
+
+  const modal = document.createElement('div');
+  modal.className = 'admin-modal';
+  modal.innerHTML = `
+    <div class="admin-modal-content">
+      <div class="admin-modal-header">
+        <h3>Edit Lap Time</h3>
+        <button onclick="closeAdminModal()" class="admin-modal-close">×</button>
+      </div>
+      <div class="admin-modal-body">
+        <p><strong>Driver:</strong> ${lap.Driver}</p>
+        <p><strong>Season:</strong> ${lap.Season} | <strong>Round:</strong> ${lap.Round}</p>
+        <p><strong>Original Timestamp:</strong> ${new Date(lap.Timestamp).toLocaleString()}</p>
+        
+        <div class="admin-edit-form">
+          <div class="admin-form-group">
+            <label>Sector 1 (seconds):</label>
+            <input type="number" step="0.001" id="editS1" value="${lap.Sector_1}" class="admin-input">
+          </div>
+          <div class="admin-form-group">
+            <label>Sector 2 (seconds):</label>
+            <input type="number" step="0.001" id="editS2" value="${lap.Sector_2}" class="admin-input">
+          </div>
+          <div class="admin-form-group">
+            <label>Sector 3 (seconds):</label>
+            <input type="number" step="0.001" id="editS3" value="${lap.Sector_3}" class="admin-input">
+          </div>
+        </div>
+      </div>
+      <div class="admin-modal-footer">
+        <button onclick="saveAdminLapEdit('${firebaseKey}')" class="admin-btn-save">💾 Save Changes</button>
+        <button onclick="closeAdminModal()" class="admin-btn-cancel">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  setTimeout(() => modal.classList.add('show'), 10);
+}
+
+async function saveAdminLapEdit(firebaseKey) {
+  try {
+    const s1 = parseFloat(document.getElementById('editS1').value);
+    const s2 = parseFloat(document.getElementById('editS2').value);
+    const s3 = parseFloat(document.getElementById('editS3').value);
+
+    if (!isFinite(s1) || !isFinite(s2) || !isFinite(s3)) {
+      alert('❌ Invalid sector times');
+      return;
+    }
+
+    const totalTime = s1 + s2 + s3;
+
+    const lap = window.adminLapsData.find(l => l._firebaseKey === firebaseKey);
+    
+    const lapRef = window.firebaseRef(window.firebaseDB, `Form_responses_1/${firebaseKey}`);
+    await window.firebaseSet(lapRef, {
+      ...lap,
+      Sector_1: s1,
+      Sector_2: s2,
+      Sector_3: s3,
+      Total_Lap_Time: totalTime,
+      Last_Modified: new Date().toISOString(),
+      Modified_By: currentUser.name
+    });
+
+    alert('✅ Lap time updated successfully!');
+    closeAdminModal();
+    
+    loadAdminTools();
+    
+    CACHE.roundDataArray = null;
+
+  } catch (err) {
+    console.error('saveAdminLapEdit error', err);
+    alert('❌ Error saving: ' + err.message);
+  }
+}
+
+async function deleteAdminLap(firebaseKey) {
+  const lap = window.adminLapsData.find(l => l._firebaseKey === firebaseKey);
+  if (!lap) return;
+
+  const confirmMsg = `⚠️ Delete this lap time?\n\nDriver: ${lap.Driver}\nSeason ${lap.Season} - Round ${lap.Round}\nTime: ${formatTime(lap.Total_Lap_Time)}\n\nThis cannot be undone!`;
+  
+  if (!confirm(confirmMsg)) return;
+
+  try {
+    const lapRef = window.firebaseRef(window.firebaseDB, `Form_responses_1/${firebaseKey}`);
+    await window.firebaseSet(lapRef, null);
+
+    alert('✅ Lap time deleted successfully!');
+    
+    loadAdminTools();
+    
+    CACHE.roundDataArray = null;
+
+  } catch (err) {
+    console.error('deleteAdminLap error', err);
+    alert('❌ Error deleting: ' + err.message);
+  }
+}
+
+function closeAdminModal() {
+  const modal = document.querySelector('.admin-modal');
+  if (modal) {
+    modal.classList.remove('show');
+    setTimeout(() => modal.remove(), 300);
   }
 }
 
@@ -1148,13 +2083,11 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
     return;
   }
 
-  // FIXED: Placeholder images properly defined for cards
   const fallbackTrackImage = 'https://static.vecteezy.com/system/resources/previews/015/114/628/non_2x/race-track-icon-isometric-road-circuit-vector.jpg';
   const fallbackCarImage = 'https://thumb.silhouette-ac.com/t/e9/e9f1eb16ae292f36be10def00d95ecbb_t.jpeg';
 
-  // Pre-index roundData by (season,round) and combo
   const bySeasonRound = {};
-  const byCombo = {}; // track|car -> array
+  const byCombo = {};
   const rdArr = toArray(roundData);
   rdArr.forEach(r => {
     if (!r) return;
@@ -1205,8 +2138,10 @@ function displayRoundCards(setupData, roundData, tracksMap={}, carsMap={}) {
   container.appendChild(frag);
 }
 
+/* Driver Stats section continues in next file due to length... */
+/* The rest remains the same as your original file from loadDriverStats onwards */
 /* -----------------------------
-   Driver Stats
+   Driver Stats (CONTINUATION FROM PART 1)
    ----------------------------- */
 async function loadDriverStats() {
   try {
@@ -1217,19 +2152,16 @@ async function loadDriverStats() {
     const roundArr = toArray(roundSnap.val());
     const leaderboardArr = toArray(leaderboardSnap.val());
 
-    // Precompute champion positions map
     const champSorted = leaderboardArr.slice().filter(l=>l && l.Driver).sort((a,b)=> (parseInt(b['Total_Points'])||0) - (parseInt(a['Total_Points'])||0));
     const champPos = {};
     champSorted.forEach((r,i)=> { if (r && r.Driver) champPos[r.Driver] = i+1; });
 
-    // Unique drivers from leaderboard (or round data fallback)
     const drivers = [...new Set((leaderboardArr.map(r=>r.Driver).filter(Boolean)).concat(roundArr.map(r=>r.Driver).filter(Boolean)))].filter(Boolean);
 
     const driversContent = document.getElementById('drivers-content');
     driversContent.innerHTML = '';
     const frag = document.createDocumentFragment();
 
-    // Index round data by driver for faster queries
     const roundsByDriver = {};
     roundArr.forEach(r => { if (!r || !r.Driver) return; if (!roundsByDriver[r.Driver]) roundsByDriver[r.Driver] = []; roundsByDriver[r.Driver].push(r); });
 
@@ -1242,7 +2174,6 @@ async function loadDriverStats() {
       const totalRounds = driverRoundData.length;
       const avgPosition = totalRounds > 0 ? (driverRoundData.reduce((s,r)=> s + (parseInt(r.Position)||0),0)/totalRounds).toFixed(1) : 'N/A';
 
-      // Personal best
       let personalBest = null;
       if (driverRoundData.length) {
         personalBest = driverRoundData.reduce((best,cur)=> {
@@ -1252,7 +2183,6 @@ async function loadDriverStats() {
         }, null);
       }
 
-      // Track+Car records for this driver
       const trackCarRecordsMap = {};
       driverRoundData.forEach(r => {
         const key = `${r['Track-Layout'] || ''} - ${r['Car_Name'] || ''}`;
@@ -1261,13 +2191,11 @@ async function loadDriverStats() {
       });
       const trackCarRecordsArray = Object.values(trackCarRecordsMap).sort((a,b)=>a.time-b.time);
 
-      // Favorite track/car
       const trackCounts = {}; const carCounts = {};
       driverRoundData.forEach(r => { if (r['Track-Layout']) trackCounts[r['Track-Layout']] = (trackCounts[r['Track-Layout']]||0)+1; if (r['Car_Name']) carCounts[r['Car_Name']] = (carCounts[r['Car_Name']]||0)+1; });
       const favoriteTrack = Object.keys(trackCounts).sort((a,b)=>trackCounts[b]-trackCounts[a])[0] || 'N/A';
       const favoriteCar = Object.keys(carCounts).sort((a,b)=>carCounts[b]-carCounts[a])[0] || 'N/A';
 
-      // Head-to-heads (optimized): build positions per round
       const positionsByRound = {};
       roundArr.forEach(r => {
         if (!r || !r.Round) return;
@@ -1287,17 +2215,14 @@ async function loadDriverStats() {
         if (wins || losses) h2hRecords[op] = { wins, losses };
       });
 
-      // profile lookup by username key
       const profileKey = encodeKey(driverName);
       const profile = DRIVER_PROFILES[profileKey] || {};
 
-      // FIXED: Format names based on login status
       let formattedName, formattedShortName;
       if (currentUser && profile && profile.surname) {
         formattedName = `${profile.name} ${profile.surname}`;
         formattedShortName = `${profile.name.charAt(0)}. ${profile.surname}`;
       } else if (!currentUser && profile && profile.surname) {
-        // Not logged in: show initials only
         formattedName = `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
         formattedShortName = `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
       } else {
@@ -1307,15 +2232,12 @@ async function loadDriverStats() {
       
       const championshipPosition = champPos[driverName] || 'N/A';
 
-      // Build card
       const card = document.createElement('div'); card.className = 'driver-card'; card.setAttribute('data-driver', driverName);
       
-      // FIXED: Show different content based on login status
       let desktopPhotoHtml = '';
       let mobilePhotoHtml = '';
       
       if (currentUser) {
-        // Logged in: show photo if available
         desktopPhotoHtml = profile && profile.photoUrl 
           ? `<div class="driver-photo-container"><img src="${normalizePhotoUrl(profile.photoUrl)}" alt="${formattedName}" class="driver-photo"><div class="driver-number-badge">${profile.number||'?'}</div></div>` 
           : '';
@@ -1323,7 +2245,6 @@ async function loadDriverStats() {
           ? `<div class="driver-photo-container-mobile"><img src="${normalizePhotoUrl(profile.photoUrl)}" alt="${formattedName}" class="driver-photo-mobile"><div class="driver-number-badge-mobile">${profile.number||'?'}</div></div>` 
           : '';
       } else {
-        // Not logged in: show number badge instead of photo
         const driverNumber = profile && profile.number ? profile.number : '?';
         desktopPhotoHtml = `<div class="driver-number-placeholder">${driverNumber}</div>`;
         mobilePhotoHtml = `<div class="driver-number-placeholder-mobile">${driverNumber}</div>`;
@@ -1391,7 +2312,6 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
       Bio: document.getElementById('profileBio').value.trim()
     };
 
-    // Save to Driver_Profiles/{usernameKey}
     const usernameKey = encodeKey(currentUser.name);
     const profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${usernameKey}`);
     await window.firebaseSet(profileRef, {
@@ -1402,7 +2322,6 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
       Bio: profileData.Bio
     });
 
-    // Update local cache
     DRIVER_PROFILES[usernameKey] = {
       name: profileData.Name,
       surname: profileData.Surname,
@@ -1433,7 +2352,6 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
   }
 });
 
-// Photo file input handler
 document.getElementById('photoFile')?.addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -1467,7 +2385,6 @@ document.getElementById('lapTimeForm')?.addEventListener('submit', async functio
   messageDiv.style.display='block'; messageDiv.style.background='#d1ecf1'; messageDiv.style.color='#0c5460'; messageDiv.textContent='⏳ Submitting...';
 
   try {
-    // Read all sector input fields
     const s1sec = document.getElementById('sector1-sec').value.trim();
     const s1ms = document.getElementById('sector1-ms').value.trim();
     const s2sec = document.getElementById('sector2-sec').value.trim();
@@ -1486,7 +2403,6 @@ document.getElementById('lapTimeForm')?.addEventListener('submit', async functio
     const seasonNumber = parseInt(document.getElementById('seasonNumber').value);
     if (!roundNumber || !seasonNumber) throw new Error('Please select both round and season');
 
-    // Ensure setup exists
     if (!CACHE.setupArray) {
       const setupSnap = await window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_2'));
       CACHE.setupArray = toArray(setupSnap.val());
@@ -1510,10 +2426,8 @@ document.getElementById('lapTimeForm')?.addEventListener('submit', async functio
     await window.firebasePush(window.firebaseRef(window.firebaseDB, 'Form_responses_1'), lapTimeData);
     messageDiv.style.background='#d4edda'; messageDiv.style.color='#155724'; messageDiv.textContent='✅ Lap time submitted! Server is calculating...';
 
-    // FIXED: Reset the form after successful submission
     document.getElementById('lapTimeForm').reset();
 
-    // refresh caches/loaders
     CACHE.roundDataArray = null;
     await wait(2000);
     loadLeaderboard();
@@ -1532,10 +2446,8 @@ document.getElementById('lapTimeForm')?.addEventListener('submit', async functio
    Login / Session handling
    ----------------------------- */
 function getFormattedDriverName(driverLoginName, includeNumber = true) {
-  // driverLoginName is the username used in ALLOWED_USERS
   const profile = DRIVER_PROFILES[encodeKey(driverLoginName)];
   
-  // If logged in and profile exists with full info, show formatted name with number
   if (currentUser && profile && profile.surname && profile.name) {
     const number = profile.number || '?';
     return includeNumber 
@@ -1543,12 +2455,10 @@ function getFormattedDriverName(driverLoginName, includeNumber = true) {
       : `${profile.name.charAt(0)}. ${profile.surname}`;
   }
   
-  // If NOT logged in but profile exists, show initials only
   if (!currentUser && profile && profile.surname && profile.name) {
     return `${profile.name.charAt(0)}. ${profile.surname.charAt(0)}.`;
   }
   
-  // Fallback to username
   return driverLoginName;
 }
 
@@ -1579,7 +2489,6 @@ function applyUserUI() {
     if (userInfo) userInfo.style.display = 'block';
     document.getElementById('userName').textContent = currentUser.name;
 
-    // profile display
     const profile = DRIVER_PROFILES[encodeKey(currentUser.name)];
     const photoContainer = document.getElementById('userPhotoContainer');
     const photoElement = document.getElementById('userProfilePhoto');
@@ -1602,6 +2511,7 @@ function applyUserUI() {
     document.getElementById('passwordInput').value = '';
   }
   updateSubmitTabVisibility();
+  updateAdminTabVisibility();
 }
 
 function updateSubmitTabVisibility() {
@@ -1626,11 +2536,10 @@ function updateSubmitTabVisibility() {
 async function checkExistingSession() {
   const stored = sessionStorage.getItem('currentUser');
   if (!stored) {
-    updateSubmitTabVisibility(); // Ensure tabs are hidden if no session
+    updateSubmitTabVisibility();
     return;
   }
   currentUser = JSON.parse(stored);
-  // Wait for profiles to load via onValue from loadConfig()
   await waitFor(()=> Object.keys(DRIVER_PROFILES).length > 0, 2000);
   applyUserUI();
 }
@@ -1674,7 +2583,6 @@ function setupSectorTimeInputs() {
   });
 }
 
-// Mobile logo switch
 function handleResponsiveUI() {
   const desktopLogo = document.getElementById('desktopLogo');
   const mobileLogo = document.getElementById('mobileLogo');
@@ -1689,9 +2597,7 @@ function handleResponsiveUI() {
 
 window.addEventListener('resize', handleResponsiveUI);
 
-// Consolidated DOMContentLoaded listener
 document.addEventListener('DOMContentLoaded', function() {
-  // Set initial tab visibility before any login
   updateSubmitTabVisibility();
   handleResponsiveUI();
   
