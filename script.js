@@ -1852,6 +1852,14 @@ async function loadAdminTools() {
   }
 }
 
+
+// Store current filter state globally
+let currentAdminFilters = {
+  driver: '',
+  season: '',
+  round: ''
+};
+
 function displayAdminLapTimes(lapsData) {
   const container = document.getElementById('admin-lap-times-table');
   if (!container) return;
@@ -1862,20 +1870,19 @@ function displayAdminLapTimes(lapsData) {
 
   const filterHtml = `
     <div class="admin-filters">
-      <select id="adminFilterDriver" class="admin-filter-select">
+      <select id="adminFilterDriver" class="admin-filter-select" onchange="filterAdminLaps()">
         <option value="">All Drivers</option>
-        ${drivers.map(d => `<option value="${d}">${d}</option>`).join('')}
+        ${drivers.map(d => `<option value="${d}" ${currentAdminFilters.driver === d ? 'selected' : ''}>${d}</option>`).join('')}
       </select>
-      <select id="adminFilterSeason" class="admin-filter-select">
+      <select id="adminFilterSeason" class="admin-filter-select" onchange="filterAdminLaps()">
         <option value="">All Seasons</option>
-        ${seasons.map(s => `<option value="${s}">Season ${s}</option>`).join('')}
+        ${seasons.map(s => `<option value="${s}" ${String(currentAdminFilters.season) === String(s) ? 'selected' : ''}>Season ${s}</option>`).join('')}
       </select>
-      <select id="adminFilterRound" class="admin-filter-select">
+      <select id="adminFilterRound" class="admin-filter-select" onchange="filterAdminLaps()">
         <option value="">All Rounds</option>
-        ${rounds.map(r => `<option value="${r}">Round ${r}</option>`).join('')}
+        ${rounds.map(r => `<option value="${r}" ${String(currentAdminFilters.round) === String(r) ? 'selected' : ''}>Round ${r}</option>`).join('')}
       </select>
-      <button onclick="filterAdminLaps()" class="admin-filter-btn">Apply Filters</button>
-      <button onclick="clearAdminFilters()" class="admin-filter-btn">Clear</button>
+      <button onclick="clearAdminFilters()" class="admin-filter-btn">Clear Filters</button>
     </div>
   `;
 
@@ -1896,7 +1903,9 @@ function displayAdminLapTimes(lapsData) {
           <th>Sector 1</th>
           <th>Sector 2</th>
           <th>Sector 3</th>
-          <th>Total Time</th>
+          <th onclick="sortAdminByTotalTime()" style="cursor:pointer;" title="Click to sort">
+            Total Time <span id="sortIndicator">⇅</span>
+          </th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -1909,7 +1918,14 @@ function displayAdminLapTimes(lapsData) {
   container.innerHTML = filterHtml + tableHtml;
 
   window.adminLapsData = lapsData;
+  
+  // Reapply filters if they exist
+  if (currentAdminFilters.driver || currentAdminFilters.season || currentAdminFilters.round) {
+    filterAdminLaps();
+  }
 }
+
+
 
 function createAdminLapRow(lap) {
   const timestamp = new Date(lap.Timestamp).toLocaleString();
@@ -1937,15 +1953,22 @@ function createAdminLapRow(lap) {
 }
 
 function filterAdminLaps() {
-  const driverFilter = document.getElementById('adminFilterDriver').value;
-  const seasonFilter = document.getElementById('adminFilterSeason').value;
-  const roundFilter = document.getElementById('adminFilterRound').value;
+  const driverFilter = document.getElementById('adminFilterDriver')?.value || '';
+  const seasonFilter = document.getElementById('adminFilterSeason')?.value || '';
+  const roundFilter = document.getElementById('adminFilterRound')?.value || '';
+
+  // Store current filter state (as strings for consistent comparison)
+  currentAdminFilters = {
+    driver: driverFilter,
+    season: seasonFilter,
+    round: roundFilter
+  };
 
   let filtered = window.adminLapsData || [];
 
   if (driverFilter) filtered = filtered.filter(l => l.Driver === driverFilter);
-  if (seasonFilter) filtered = filtered.filter(l => String(l.Season) === seasonFilter);
-  if (roundFilter) filtered = filtered.filter(l => String(l.Round) === roundFilter);
+  if (seasonFilter) filtered = filtered.filter(l => String(l.Season) === String(seasonFilter));
+  if (roundFilter) filtered = filtered.filter(l => String(l.Round) === String(roundFilter));
 
   const tbody = document.getElementById('adminLapsTableBody');
   if (tbody) {
@@ -1953,12 +1976,67 @@ function filterAdminLaps() {
   }
 }
 
+
 function clearAdminFilters() {
-  document.getElementById('adminFilterDriver').value = '';
-  document.getElementById('adminFilterSeason').value = '';
-  document.getElementById('adminFilterRound').value = '';
+  // Clear stored filters
+  currentAdminFilters = {
+    driver: '',
+    season: '',
+    round: ''
+  };
+  
+  const driverFilter = document.getElementById('adminFilterDriver');
+  const seasonFilter = document.getElementById('adminFilterSeason');
+  const roundFilter = document.getElementById('adminFilterRound');
+  
+  if (driverFilter) driverFilter.value = '';
+  if (seasonFilter) seasonFilter.value = '';
+  if (roundFilter) roundFilter.value = '';
+  
   filterAdminLaps();
 }
+
+
+// Add sorting functionality
+let adminSortAscending = true;
+
+function sortAdminByTotalTime() {
+  const tbody = document.getElementById('adminLapsTableBody');
+  if (!tbody) return;
+
+  // Get current rows
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  
+  // Sort by total time
+  rows.sort((a, b) => {
+    const keyA = a.getAttribute('data-key');
+    const keyB = b.getAttribute('data-key');
+    
+    const lapA = window.adminLapsData.find(l => l._firebaseKey === keyA);
+    const lapB = window.adminLapsData.find(l => l._firebaseKey === keyB);
+    
+    if (!lapA || !lapB) return 0;
+    
+    const timeA = parseFloat(lapA.Total_Lap_Time) || 0;
+    const timeB = parseFloat(lapB.Total_Lap_Time) || 0;
+    
+    return adminSortAscending ? timeA - timeB : timeB - timeA;
+  });
+
+  // Toggle sort direction for next click
+  adminSortAscending = !adminSortAscending;
+  
+  // Update indicator
+  const indicator = document.getElementById('sortIndicator');
+  if (indicator) {
+    indicator.textContent = adminSortAscending ? '↓' : '↑';
+  }
+
+  // Clear and re-append sorted rows
+  tbody.innerHTML = '';
+  rows.forEach(row => tbody.appendChild(row));
+}
+
 
 async function editAdminLap(firebaseKey) {
   const lap = window.adminLapsData.find(l => l._firebaseKey === firebaseKey);
@@ -2029,10 +2107,11 @@ async function saveAdminLapEdit(firebaseKey) {
       Modified_By: currentUser.name
     });
 
-    alert('✅ Lap time updated successfully!');
+    //alert('✅ Lap time updated successfully!');
     closeAdminModal();
     
-    loadAdminTools();
+    // Reload admin tools but preserve filters
+    await loadAdminTools();
     
     CACHE.roundDataArray = null;
 
@@ -2056,7 +2135,8 @@ async function deleteAdminLap(firebaseKey) {
 
     alert('✅ Lap time deleted successfully!');
     
-    loadAdminTools();
+    // Reload admin tools but preserve filters
+    await loadAdminTools();
     
     CACHE.roundDataArray = null;
 
@@ -2065,7 +2145,6 @@ async function deleteAdminLap(firebaseKey) {
     alert('❌ Error deleting: ' + err.message);
   }
 }
-
 function closeAdminModal() {
   const modal = document.querySelector('.admin-modal');
   if (modal) {
