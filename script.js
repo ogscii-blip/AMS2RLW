@@ -89,6 +89,7 @@ function encodeKey(name) {
    ----------------------------- */
 let ALLOWED_USERS = {};      // { username: { email, password } } - email may be empty in your config
 let DRIVER_PROFILES = {};    // { usernameKey: { name, surname, number, photoUrl, bio } }
+let DRIVER_PROFILE_INDICES = {}; // { usernameKey: arrayIndex } - for array-based storage
 let APPS_SCRIPT_URL = null;
 let currentUser = null;      // { name: username, email? }
 
@@ -142,18 +143,25 @@ async function loadConfig() {
       // If stored as array (legacy), convert to username-keyed map by using Name or Email fallback.
       if (Array.isArray(raw)) {
         const mapped = {};
-        raw.forEach(item => {
+        const indices = {};
+        raw.forEach((item, index) => {
           if (!item) return;
           const nameKey = item.Username || item.Name || (item.Email ? item.Email.split('@')[0] : null);
-          if (nameKey) mapped[encodeKey(nameKey)] = {
-            name: item.Name || '',
-            surname: item.Surname || '',
-            number: item.Number ? String(item.Number) : '',
-            photoUrl: item.Photo_URL || item.Photo_URL || '',
-            bio: item.Bio || ''
-          };
+          if (nameKey) {
+            const encodedKey = encodeKey(nameKey);
+            mapped[encodedKey] = {
+              name: item.Name || '',
+              surname: item.Surname || '',
+              number: item.Number ? String(item.Number) : '',
+              photoUrl: item.Photo_URL || item.Photo_URL || '',
+              bio: item.Bio || '',
+              email: item.Email || ''
+            };
+            indices[encodedKey] = index; // Store the array index
+          }
         });
         DRIVER_PROFILES = mapped;
+        DRIVER_PROFILE_INDICES = indices;
       } else {
         // Object keyed already: normalize photo and ensure fields exist
         const mapped = {};
@@ -164,10 +172,12 @@ async function loadConfig() {
             surname: item.Surname || '',
             number: item.Number ? String(item.Number) : '',
             photoUrl: item.Photo_URL || item.Photo || '',
-            bio: item.Bio || ''
+            bio: item.Bio || '',
+            email: item.Email || ''
           };
         });
         DRIVER_PROFILES = mapped;
+        DRIVER_PROFILE_INDICES = {}; // No indices needed for object storage
       }
       console.log('Driver profiles loaded:', Object.keys(DRIVER_PROFILES).length);
     });
@@ -2382,6 +2392,9 @@ async function loadProfile() {
     document.getElementById('photoPreviewImg').src = normalizePhotoUrl(profile.photoUrl);
     document.getElementById('photoPreview').style.display = 'block';
   }
+  
+  // Load email preferences
+  setTimeout(() => loadEmailPreferences(), 100);
 }
 
 document.getElementById('profileForm')?.addEventListener('submit', async function(e){
@@ -2393,20 +2406,53 @@ document.getElementById('profileForm')?.addEventListener('submit', async functio
     const profileData = {
       Name: document.getElementById('profileName').value.trim(),
       Surname: document.getElementById('profileSurname').value.trim(),
-      Number: document.getElementById('profileNumber').value,
+      Number: parseInt(document.getElementById('profileNumber').value),
       Photo_URL: document.getElementById('profilePhotoUrl').value.trim(),
       Bio: document.getElementById('profileBio').value.trim()
     };
+    
+    // Get email preferences
+    const emailPrefs = {
+      newRound: document.getElementById('email-newRound').checked,
+      fastestLap: document.getElementById('email-fastestLap').checked,
+      weeklyResults: document.getElementById('email-weeklyResults').checked
+    };
 
     const usernameKey = encodeKey(currentUser.name);
-    const profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${usernameKey}`);
-    await window.firebaseSet(profileRef, {
-      Name: profileData.Name,
-      Surname: profileData.Surname,
-      Number: profileData.Number,
-      Photo_URL: profileData.Photo_URL,
-      Bio: profileData.Bio
-    });
+    
+    // Check if profiles are stored as array (use index) or object (use key)
+    const arrayIndex = DRIVER_PROFILE_INDICES[usernameKey];
+    let profileRef;
+    
+    if (arrayIndex !== undefined) {
+      // Array-based storage - use the array index
+      profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${arrayIndex}`);
+      
+      // Get existing profile to preserve Email field
+      const existingSnapshot = await window.firebaseGet(profileRef);
+      const existingProfile = existingSnapshot.val() || {};
+      
+      await window.firebaseSet(profileRef, {
+        Name: profileData.Name,
+        Surname: profileData.Surname,
+        Number: profileData.Number,
+        Photo_URL: profileData.Photo_URL,
+        Bio: profileData.Bio,
+        Email: existingProfile.Email || '', // Preserve existing email
+        emailNotifications: emailPrefs
+      });
+    } else {
+      // Object-based storage - use the username key
+      profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${usernameKey}`);
+      await window.firebaseSet(profileRef, {
+        Name: profileData.Name,
+        Surname: profileData.Surname,
+        Number: profileData.Number,
+        Photo_URL: profileData.Photo_URL,
+        Bio: profileData.Bio,
+        emailNotifications: emailPrefs
+      });
+    }
 
     DRIVER_PROFILES[usernameKey] = {
       name: profileData.Name,
@@ -3274,4 +3320,167 @@ function setupTotalTimePreview() {
 
   // Initialize with current values
   updateTotalTime();
+}
+
+// ============================================================================
+// Manual Recalculate Function for Admin Portal
+// ============================================================================
+async function manualRecalculate() {
+    const recalcButton = document.getElementById('manualRecalcButton');
+    const statusDiv = document.getElementById('recalcStatus');
+    
+    try {
+        // Disable button and show loading
+        if (recalcButton) {
+            recalcButton.disabled = true;
+            recalcButton.textContent = '⏳ Recalculating...';
+        }
+        
+        if (statusDiv) {
+            statusDiv.style.display = 'block';
+            statusDiv.style.background = '#d1ecf1';
+            statusDiv.style.color = '#0c5460';
+            statusDiv.textContent = '⏳ Recalculating all standings...';
+        }
+        
+        console.log('🔧 Calling Cloud Function to recalculate standings...');
+        
+        // Call the Cloud Function
+        const recalculateStandings = window.httpsCallable(window.firebaseFunctions, 'recalculateStandings');
+        const result = await recalculateStandings();
+        
+        console.log('✅ Cloud Function response:', result.data);
+        
+        // Show success
+        if (statusDiv) {
+            statusDiv.style.background = '#d4edda';
+            statusDiv.style.color = '#155724';
+            statusDiv.textContent = '✅ ' + result.data.message;
+        }
+        
+        // Re-enable button
+        if (recalcButton) {
+            recalcButton.disabled = false;
+            recalcButton.textContent = '🔄 Recalculate All Standings';
+        }
+        
+        // Reload data after 2 seconds
+        setTimeout(() => {
+            if (statusDiv) statusDiv.style.display = 'none';
+            
+            // Refresh displays
+            if (typeof loadLeaderboard === 'function') loadLeaderboard();
+            if (typeof loadRoundData === 'function') loadRoundData();
+            if (typeof loadAdminData === 'function') loadAdminData();
+            
+            alert('✅ Standings recalculated! Data refreshed.');
+        }, 2000);
+        
+    } catch (error) {
+        console.error('❌ Error calling recalculate function:', error);
+        
+        if (statusDiv) {
+            statusDiv.style.background = '#f8d7da';
+            statusDiv.style.color = '#721c24';
+            statusDiv.textContent = '❌ Error: ' + error.message;
+        }
+        
+        if (recalcButton) {
+            recalcButton.disabled = false;
+            recalcButton.textContent = '🔄 Recalculate All Standings';
+        }
+        
+        alert('❌ Failed to recalculate: ' + error.message);
+    }
+}
+
+// ============================================================================
+// Email Preferences Management
+// ============================================================================
+
+// Load email preferences when user logs in
+async function loadEmailPreferences() {
+  if (!currentUser) return;
+  
+  try {
+    const profileKey = encodeKey(currentUser.name);
+    const arrayIndex = DRIVER_PROFILE_INDICES[profileKey];
+    
+    let profileRef;
+    if (arrayIndex !== undefined) {
+      // Array-based storage
+      profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${arrayIndex}`);
+    } else {
+      // Object-based storage
+      profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${profileKey}`);
+    }
+    
+    const snapshot = await window.firebaseGet(profileRef);
+    const profile = snapshot.val();
+    
+    if (profile && profile.emailNotifications) {
+      document.getElementById('email-newRound').checked = profile.emailNotifications.newRound !== false;
+      document.getElementById('email-fastestLap').checked = profile.emailNotifications.fastestLap !== false;
+      document.getElementById('email-weeklyResults').checked = profile.emailNotifications.weeklyResults !== false;
+    } else {
+      // Default all to true
+      document.getElementById('email-newRound').checked = true;
+      document.getElementById('email-fastestLap').checked = true;
+      document.getElementById('email-weeklyResults').checked = true;
+    }
+  } catch (error) {
+    console.error('Error loading email preferences:', error);
+  }
+}
+
+// Save email preferences
+async function saveEmailPreferences() {
+  if (!currentUser) {
+    alert('Please log in first');
+    return;
+  }
+  
+  const newRound = document.getElementById('email-newRound').checked;
+  const fastestLap = document.getElementById('email-fastestLap').checked;
+  const weeklyResults = document.getElementById('email-weeklyResults').checked;
+  
+  const profileKey = encodeKey(currentUser.name);
+  const arrayIndex = DRIVER_PROFILE_INDICES[profileKey];
+  
+  let profileRef;
+  if (arrayIndex !== undefined) {
+    // Array-based storage
+    profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${arrayIndex}/emailNotifications`);
+  } else {
+    // Object-based storage
+    profileRef = window.firebaseRef(window.firebaseDB, `Driver_Profiles/${profileKey}/emailNotifications`);
+  }
+  
+  try {
+    await window.firebaseSet(profileRef, {
+      newRound: newRound,
+      fastestLap: fastestLap,
+      weeklyResults: weeklyResults
+    });
+    
+    const message = document.getElementById('email-pref-message');
+    message.style.display = 'block';
+    message.style.background = '#d4edda';
+    message.style.color = '#155724';
+    message.textContent = '✅ Email preferences saved successfully!';
+    
+    setTimeout(() => {
+      message.style.display = 'none';
+    }, 3000);
+    
+    console.log('Email preferences saved:', { newRound, fastestLap, weeklyResults });
+    
+  } catch (error) {
+    console.error('Error saving email preferences:', error);
+    const message = document.getElementById('email-pref-message');
+    message.style.display = 'block';
+    message.style.background = '#f8d7da';
+    message.style.color = '#721c24';
+    message.textContent = '❌ Error saving preferences: ' + error.message;
+  }
 }
