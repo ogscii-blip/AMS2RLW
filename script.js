@@ -3051,6 +3051,148 @@ function generateCarsConfigContent(carsData) {
   return subBannerHtml + searchHtml + addNewHtml + tableHtml;
 }
 
+function generateEmailLogsContent(emailLogsData) {
+  const subBannerHtml = `
+    <div class="admin-sub-banner">
+      <h3>📧 Email Logs</h3>
+      <p>Monitor all sent and failed email notifications</p>
+    </div>
+  `;
+
+  // Calculate stats
+  const totalEmails = emailLogsData.length;
+  const sentEmails = emailLogsData.filter(log => log.status === 'sent').length;
+  const failedEmails = emailLogsData.filter(log => log.status === 'failed').length;
+
+  const statsHtml = `
+    <div class="admin-email-stats">
+      <div class="admin-stat-card">
+        <div class="admin-stat-number">${totalEmails}</div>
+        <div class="admin-stat-label">Total Emails</div>
+      </div>
+      <div class="admin-stat-card admin-stat-success">
+        <div class="admin-stat-number">${sentEmails}</div>
+        <div class="admin-stat-label">Sent Successfully</div>
+      </div>
+      <div class="admin-stat-card admin-stat-failed">
+        <div class="admin-stat-number">${failedEmails}</div>
+        <div class="admin-stat-label">Failed</div>
+      </div>
+    </div>
+  `;
+
+  // Get unique types for filter
+  const types = [...new Set(emailLogsData.map(l => l.type).filter(Boolean))];
+
+  const filterHtml = `
+    <div class="admin-filters">
+      <select id="emailTypeFilter" class="admin-filter-select" onchange="filterEmailLogs()">
+        <option value="">All Types</option>
+        ${types.map(t => `<option value="${t}">${t}</option>`).join('')}
+      </select>
+      <select id="emailStatusFilter" class="admin-filter-select" onchange="filterEmailLogs()">
+        <option value="">All Status</option>
+        <option value="sent">Sent</option>
+        <option value="failed">Failed</option>
+      </select>
+      <input type="text" 
+             id="emailRecipientSearch" 
+             placeholder="🔍 Search recipient..." 
+             class="admin-search-input"
+             oninput="filterEmailLogs()" />
+      <button onclick="clearEmailFilters()" class="admin-filter-btn">Clear Filters</button>
+    </div>
+  `;
+
+  // Sort by timestamp (newest first)
+  emailLogsData.sort((a, b) => b.sentAt - a.sentAt);
+
+  const tableHtml = `
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Type</th>
+          <th>Recipient</th>
+          <th>Subject</th>
+          <th>Status</th>
+          <th>Error</th>
+        </tr>
+      </thead>
+      <tbody id="emailLogsTableBody">
+        ${emailLogsData.map(log => createEmailLogRow(log)).join('')}
+      </tbody>
+    </table>
+  `;
+
+  return subBannerHtml + statsHtml + filterHtml + tableHtml;
+}
+
+function createEmailLogRow(log) {
+  const date = new Date(log.sentAt);
+  const formattedDate = date.toLocaleString('en-GB', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+
+  const statusClass = log.status === 'sent' ? 'admin-badge-success' : 'admin-badge-failed';
+  const typeClass = `admin-badge-${log.type || 'general'}`;
+
+  return `
+    <tr data-recipient="${(log.recipient || '').toLowerCase()}" data-type="${log.type}" data-status="${log.status}">
+      <td data-label="Timestamp" style="font-size: 12px; color: #666;">${formattedDate}</td>
+      <td data-label="Type"><span class="admin-badge ${typeClass}">${log.type}</span></td>
+      <td data-label="Recipient">${log.recipient}</td>
+      <td data-label="Subject">${log.subject}</td>
+      <td data-label="Status"><span class="admin-badge ${statusClass}">${log.status}</span></td>
+      <td data-label="Error" style="color: #dc3545; font-size: 12px;">${log.error || '-'}</td>
+    </tr>
+  `;
+}
+
+function filterEmailLogs() {
+  const typeFilter = document.getElementById('emailTypeFilter')?.value || '';
+  const statusFilter = document.getElementById('emailStatusFilter')?.value || '';
+  const recipientSearch = document.getElementById('emailRecipientSearch')?.value.toLowerCase().trim() || '';
+  
+  const tbody = document.getElementById('emailLogsTableBody');
+  if (!tbody) return;
+
+  const rows = tbody.querySelectorAll('tr');
+  
+  rows.forEach(row => {
+    const recipient = row.getAttribute('data-recipient') || '';
+    const type = row.getAttribute('data-type') || '';
+    const status = row.getAttribute('data-status') || '';
+    
+    const matchesType = !typeFilter || type === typeFilter;
+    const matchesStatus = !statusFilter || status === statusFilter;
+    const matchesRecipient = !recipientSearch || recipient.includes(recipientSearch);
+    
+    if (matchesType && matchesStatus && matchesRecipient) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+
+function clearEmailFilters() {
+  const typeFilter = document.getElementById('emailTypeFilter');
+  const statusFilter = document.getElementById('emailStatusFilter');
+  const recipientSearch = document.getElementById('emailRecipientSearch');
+  
+  if (typeFilter) typeFilter.value = '';
+  if (statusFilter) statusFilter.value = '';
+  if (recipientSearch) recipientSearch.value = '';
+  
+  filterEmailLogs();
+}
+
 // Live filter function for tracks
 function filterTracksTable() {
   const searchInput = document.getElementById('trackSearchInput');
