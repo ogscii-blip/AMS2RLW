@@ -1928,3 +1928,104 @@ header p {
 .admin-search-input::placeholder {
   color: #999;
 }
+/* Email Logs Stats */
+.admin-email-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+  padding: 0 20px;
+}
+
+.admin-stat-card {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  border-left: 4px solid #667eea;
+}
+
+.admin-stat-card.admin-stat-success {
+  border-left-color: #28a745;
+}
+
+.admin-stat-card.admin-stat-failed {
+  border-left-color: #dc3545;
+}
+
+.admin-stat-number {
+  font-size: 36px;
+  font-weight: bold;
+  color: #667eea;
+  margin-bottom: 5px;
+}
+
+.admin-stat-card.admin-stat-success .admin-stat-number {
+  color: #28a745;
+}
+
+.admin-stat-card.admin-stat-failed .admin-stat-number {
+  color: #dc3545;
+}
+
+.admin-stat-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Email Log Badges */
+.admin-badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+  text-transform: capitalize;
+}
+
+.admin-badge-success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.admin-badge-failed {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.admin-badge-newRound {
+  background: #667eea;
+  color: white;
+}
+
+.admin-badge-fastestLap {
+  background: #f39c12;
+  color: white;
+}
+
+.admin-badge-weeklyResults {
+  background: #28a745;
+  color: white;
+}
+
+.admin-badge-general {
+  background: #6c757d;
+  color: white;
+}
+
+/* Search input styling */
+.admin-search-input {
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+  width: 250px;
+}
+
+.admin-search-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
