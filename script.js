@@ -2814,20 +2814,23 @@ function displayAdminInterface(lapsData, tracksData, carsData) {
   const container = document.getElementById('admin-lap-times-table');
   if (!container) return;
 
-  // Admin tabs navigation
-  const tabsHtml = `
-    <div class="admin-tabs">
-      <button class="admin-tab-button ${currentAdminTab === 'time-submissions' ? 'active' : ''}" onclick="switchAdminTab('time-submissions')">
-        ⏱️ Time Submissions
-      </button>
-      <button class="admin-tab-button ${currentAdminTab === 'tracks-config' ? 'active' : ''}" onclick="switchAdminTab('tracks-config')">
-        🏁 Tracks Config
-      </button>
-      <button class="admin-tab-button ${currentAdminTab === 'cars-config' ? 'active' : ''}" onclick="switchAdminTab('cars-config')">
-        🏎️ Cars Config
-      </button>
-    </div>
-  `;
+// Admin tabs navigation
+const tabsHtml = `
+  <div class="admin-tabs">
+    <button class="admin-tab-button ${currentAdminTab === 'time-submissions' ? 'active' : ''}" onclick="switchAdminTab('time-submissions')">
+      ⏱️ Time Submissions
+    </button>
+    <button class="admin-tab-button ${currentAdminTab === 'tracks-config' ? 'active' : ''}" onclick="switchAdminTab('tracks-config')">
+      🏁 Tracks Config
+    </button>
+    <button class="admin-tab-button ${currentAdminTab === 'cars-config' ? 'active' : ''}" onclick="switchAdminTab('cars-config')">
+      🏎️ Cars Config
+    </button>
+    <a href="email-logs.html" class="admin-tab-button" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
+      📧 Email Logs
+    </a>
+  </div>
+`;
 
   let contentHtml = '';
 
