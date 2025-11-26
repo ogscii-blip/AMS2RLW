@@ -2779,11 +2779,20 @@ async function loadAdminTools() {
   }
 
   try {
-    const [lapsSnapshot, tracksSnapshot, carsSnapshot] = await Promise.all([
-      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_1')),
-      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Tracks')),
-      window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Cars'))
-    ]);
+    const [lapsSnapshot, tracksSnapshot, carsSnapshot, emailLogsSnapshot] = await Promise.all([
+     window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Form_responses_1')),
+     window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Tracks')),
+     window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Cars')),
+     window.firebaseGet(window.firebaseRef(window.firebaseDB, 'Email_Logs'))
+   ]);
+
+     const emailLogsData = [];
+   const emailLogsObject = emailLogsSnapshot.val();
+   if (emailLogsObject && typeof emailLogsObject === 'object') {
+     Object.entries(emailLogsObject).forEach(([key, value]) => {
+       emailLogsData.push({ id: key, ...value });
+     });
+   }
     
     const lapsData = toArray(lapsSnapshot.val());
     const tracksData = toArray(tracksSnapshot.val());
@@ -2803,14 +2812,14 @@ async function loadAdminTools() {
     window.adminTracksData = tracksData;
     window.adminCarsData = carsData;
 
-    displayAdminInterface(lapsWithKeys, tracksData, carsData);
+    displayAdminInterface(lapsWithKeys, tracksData, carsData, emailLogsData);
 
   } catch (err) {
     console.error('loadAdminTools error', err);
   }
 }
 
-function displayAdminInterface(lapsData, tracksData, carsData) {
+function displayAdminInterface(lapsData, tracksData, carsData, emailLogsData) {
   const container = document.getElementById('admin-lap-times-table');
   if (!container) return;
 
@@ -2826,21 +2835,23 @@ const tabsHtml = `
     <button class="admin-tab-button ${currentAdminTab === 'cars-config' ? 'active' : ''}" onclick="switchAdminTab('cars-config')">
       🏎️ Cars Config
     </button>
-    <a href="email-logs.html" class="admin-tab-button" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
-      📧 Email Logs
-    </a>
+    <button class="admin-tab-button ${currentAdminTab === 'email-logs' ? 'active' : ''}" onclick="switchAdminTab('email-logs')">
+     📧 Email Logs
+    </button>
   </div>
 `;
 
   let contentHtml = '';
 
   if (currentAdminTab === 'time-submissions') {
-    contentHtml = generateTimeSubmissionsContent(lapsData);
-  } else if (currentAdminTab === 'tracks-config') {
-    contentHtml = generateTracksConfigContent(tracksData);
-  } else if (currentAdminTab === 'cars-config') {
-    contentHtml = generateCarsConfigContent(carsData);
-  }
+     contentHtml = generateTimeSubmissionsContent(lapsData);
+   } else if (currentAdminTab === 'tracks-config') {
+     contentHtml = generateTracksConfigContent(tracksData);
+   } else if (currentAdminTab === 'cars-config') {
+     contentHtml = generateCarsConfigContent(carsData);
+   } else if (currentAdminTab === 'email-logs') {
+     contentHtml = generateEmailLogsContent(emailLogsData);
+   }
 
   container.innerHTML = tabsHtml + contentHtml;
 
