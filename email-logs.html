@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Logs - Admin Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .filters {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .stats {
+            padding: 20px 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-card.success .number {
+            color: #28a745;
+        }
+
+        .stat-card.failed .number {
+            color: #dc3545;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-sent {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .type-badge {
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .type-newRound {
+            background: #667eea;
+            color: white;
+        }
+
+        .type-fastestLap {
+            background: #f39c12;
+            color: white;
+        }
+
+        .type-weeklyResults {
+            background: #28a745;
+            color: white;
+        }
+
+        .type-general {
+            background: #6c757d;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin: 20px 30px;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+
+        .back-button:hover {
+            background: #5568d3;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 Email Logs</h1>
+            <p>Monitor all sent and failed emails</p>
+        </div>
+
+        <a href="admin.html" class="back-button">← Back to Admin Panel</a>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Emails</h3>
+                <div class="number" id="totalEmails">0</div>
+            </div>
+            <div class="stat-card success">
+                <h3>Sent Successfully</h3>
+                <div class="number" id="sentEmails">0</div>
+            </div>
+            <div class="stat-card failed">
+                <h3>Failed</h3>
+                <div class="number" id="failedEmails">0</div>
+            </div>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label>Email Type</label>
+                <select id="typeFilter">
+                    <option value="all">All Types</option>
+                    <option value="newRound">New Round</option>
+                    <option value="fastestLap">Fastest Lap</option>
+                    <option value="weeklyResults">Weekly Results</option>
+                    <option value="general">General</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select id="statusFilter">
+                    <option value="all">All Status</option>
+                    <option value="sent">Sent</option>
+                    <option value="failed">Failed</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Search Recipient</label>
+                <input type="text" id="recipientSearch" placeholder="Email address...">
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="loading" id="loading">Loading email logs...</div>
+            <div class="table-container" id="tableContainer" style="display: none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Type</th>
+                            <th>Recipient</th>
+                            <th>Subject</th>
+                            <th>Status</th>
+                            <th>Error</th>
+                        </tr>
+                    </thead>
+                    <tbody id="emailLogsBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="no-data" id="noData" style="display: none;">
+                No email logs found
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
+        import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCh6K8FVwN9fxTQ0Y-BnO7YFdU",
+            authDomain: "ams2abo.firebaseapp.com",
+            databaseURL: "https://ams2abo-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "ams2abo",
+            storageBucket: "ams2abo.firebasestorage.app",
+            messagingSenderId: "1008932609178",
+            appId: "1:1008932609178:web:64a3e3710b83b1a96c7b7f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        let allLogs = [];
+
+        // Load email logs
+        const emailLogsRef = ref(database, 'Email_Logs');
+        onValue(emailLogsRef, (snapshot) => {
+            const data = snapshot.val();
+            
+            if (!data) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('noData').style.display = 'block';
+                return;
+            }
+
+            // Convert to array and sort by timestamp (newest first)
+            allLogs = Object.entries(data).map(([key, value]) => ({
+                id: key,
+                ...value
+            })).sort((a, b) => b.sentAt - a.sentAt);
+
+            updateStats();
+            displayLogs(allLogs);
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('tableContainer').style.display = 'block';
+        });
+
+        function updateStats() {
+            const total = allLogs.length;
+            const sent = allLogs.filter(log => log.status === 'sent').length;
+            const failed = allLogs.filter(log => log.status === 'failed').length;
+
+            document.getElementById('totalEmails').textContent = total;
+            document.getElementById('sentEmails').textContent = sent;
+            document.getElementById('failedEmails').textContent = failed;
+        }
+
+        function displayLogs(logs) {
+            const tbody = document.getElementById('emailLogsBody');
+            tbody.innerHTML = '';
+
+            if (logs.length === 0) {
+                document.getElementById('tableContainer').style.display = 'none';
+                document.getElementById('noData').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('tableContainer').style.display = 'block';
+            document.getElementById('noData').style.display = 'none';
+
+            logs.forEach(log => {
+                const row = document.createElement('tr');
+                
+                const date = new Date(log.sentAt);
+                const formattedDate = date.toLocaleString('en-GB', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+
+                row.innerHTML = `
+                    <td class="timestamp">${formattedDate}</td>
+                    <td><span class="type-badge type-${log.type}">${log.type}</span></td>
+                    <td>${log.recipient}</td>
+                    <td>${log.subject}</td>
+                    <td><span class="status-badge status-${log.status}">${log.status}</span></td>
+                    <td style="color: #dc3545; font-size: 12px;">${log.error || '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function filterLogs() {
+            const typeFilter = document.getElementById('typeFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const recipientSearch = document.getElementById('recipientSearch').value.toLowerCase();
+
+            let filtered = allLogs;
+
+            if (typeFilter !== 'all') {
+                filtered = filtered.filter(log => log.type === typeFilter);
+            }
+
+            if (statusFilter !== 'all') {
+                filtered = filtered.filter(log => log.status === statusFilter);
+            }
+
+            if (recipientSearch) {
+                filtered = filtered.filter(log => 
+                    log.recipient.toLowerCase().includes(recipientSearch)
+                );
+            }
+
+            displayLogs(filtered);
+        }
+
+        // Add event listeners for filters
+        document.getElementById('typeFilter').addEventListener('change', filterLogs);
+        document.getElementById('statusFilter').addEventListener('change', filterLogs);
+        document.getElementById('recipientSearch').addEventListener('input', filterLogs);
+    </script>
+</body>
+</html>
